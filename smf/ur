@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -o xtrace
+
+rabbitmq=$(/usr/sbin/mdata-get rabbitmq)
+
+if [[ -n ${rabbitmq} ]]; then
+    echo "FATAL: Metadata is missing rabbitmq property."
+    exit 1
+fi
+
+export AMQP_LOGIN=$(echo ${rabbitmq} | cut -d: -f1)
+export AMQP_PASSWORD=$(echo ${rabbitmq} | cut -d: -f2)
+export AMQP_HOST=$(echo ${rabbitmq} | cut -d: -f3)
+export AMQP_PORT=$(echo ${rabbitmq} | cut -d: -f4)
+
+/usr/bin/ctrun -l child -o noorphan /usr/node/bin/node --abort_on_uncaught_exception /opt/smartdc/mockcn/ur-agent/ur-agent 2>&1 &
