@@ -4,7 +4,7 @@ set -o xtrace
 
 rabbitmq=$(/usr/sbin/mdata-get rabbitmq)
 
-if [[ -n ${rabbitmq} ]]; then
+if [[ -z ${rabbitmq} ]]; then
     echo "FATAL: Metadata is missing rabbitmq property."
     exit 1
 fi

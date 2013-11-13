@@ -1,0 +1,70 @@
+#!/bin/bash
+
+set -o xtrace
+
+vm_uuid=$(uuid)
+
+# setup
+sdc-sapi /services/$(sdc-sapi /services?name=dhcpd | json -Ha uuid) \
+    -X PUT -d '{ "metadata": { "allow_missing_class_id": true } }'
+imgadm sources -a https://updates.joyent.com/
+
+# import latest
+latest=$(imgadm avail | grep mockcn | tail -1 | cut -d ' ' -f 1)
+imgadm import ${latest}
+
+cat > /tmp/user_script.$$ <<EOF
+#!/bin/bash
+
+set -o xtrace
+set -o errexit
+
+SYSINFO_FILE=/tmp/sysinfos.\$\$
+
+mdata-get sysinfo > \${SYSINFO_FILE}
+for uuid in \$(json -a UUID < \${SYSINFO_FILE}); do
+    mkdir -p /mockcn/\${uuid}/vms
+    json -a -c "this.UUID == '\${uuid}'" < \${SYSINFO_FILE} > /mockcn/\${uuid}/sysinfo.json.in
+    /opt/smartdc/mockcn/bin/sysinfo /mockcn/\${uuid}/sysinfo.json.in \
+        > /mockcn/\${uuid}/sysinfo.json
+    rm /mockcn/\${uuid}/sysinfo.json.in
+done
+
+svccfg import /opt/smartdc/mockcn/smf/ur.xml
+
+exit 0
+EOF
+
+(cat > /tmp/sysinfo.$$) <<EOF
+[{
+    "UUID": "${vm_uuid}"
+}]
+EOF
+
+(cat > /tmp/payload.0.$$) <<EOF
+{
+ "uuid": "${vm_uuid}",
+ "brand": "joyent-minimal",
+ "quota": 20,
+ "image_uuid": "${latest}",
+ "max_physical_memory": 256,
+ "archive_on_delete": true,
+ "alias": "mock-cn0",
+ "autoboot": false,
+ "customer_metadata": {
+     "rabbitmq": "guest:guest:10.99.99.20:5672",
+     "sysinfo": $(cat /tmp/sysinfo.$$ | json -e 'this._ = JSON.stringify(this)' -j 0._)
+ },
+ "nics": [
+   {
+     "nic_tag": "admin",
+     "ip": "dhcp",
+     "primary": true
+   }
+ ]
+}
+EOF
+
+/usr/vm/sbin/add-userscript /tmp/user_script.$$ < /tmp/payload.0.$$ > /tmp/payload.1.$$
+
+vmadm create -f /tmp/payload.1.$$
