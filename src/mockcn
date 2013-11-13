@@ -19,7 +19,8 @@ cat > /tmp/user_script.$$ <<EOF
 set -o xtrace
 set -o errexit
 
-/opt/smartdc/bin/update-sysinfo
+/opt/smartdc/mockcn/bin/update-sysinfo
+mount -F lofs /opt/smartdc/mockcn/bin/sysinfo /usr/bin/sysinfo
 svccfg import /opt/smartdc/mockcn/smf/ur.xml
 
 exit 0
@@ -39,8 +40,7 @@ EOF
  "image_uuid": "${latest}",
  "max_physical_memory": 256,
  "archive_on_delete": true,
- "alias": "mock-cn0",
- "autoboot": false,
+ "alias": "mockcn0",
  "customer_metadata": {
      "rabbitmq": "guest:guest:10.99.99.20:5672",
      "sysinfo": $(cat /tmp/sysinfo.$$ | json -e 'this._ = JSON.stringify(this)' -j 0._)

@@ -99,6 +99,14 @@ function addNic(sysinfo, callback)
 
 async.series([
     function (cb) {
+        if (process.env['MOCKCN_SERVER_UUID']) {
+            filename = '/mockcn/' + process.env['MOCKCN_SERVER_UUID']
+                + '/sysinfo.json';
+            console.log('USING FILE:' + filename);
+            cb();
+            return;
+        }
+
         if (process.argv.length !== 3) {
             cb(new Error('Usage: ' + process.argv[1] + ' <filename>'));
             return;
@@ -146,7 +154,15 @@ async.series([
         });
     }, function (cb) {
         if (!final_sysinfo.hasOwnProperty('Hostname')) {
-            final_sysinfo['Hostname'] = 'MOCKCN' + Math.floor(Math.random() * 200);
+            final_sysinfo['Hostname'] = 'MOCKCN'
+                + Math.floor(Math.random() * 200);
+        }
+        cb();
+    }, function (cb) {
+        if (!final_sysinfo.hasOwnProperty('Boot Time')) {
+						// sysinfo has 'Boot Time' as a string
+            final_sysinfo['Boot Time']
+                = Math.floor(new Date().getTime() / 1000).toString();
         }
         cb();
     }, function (cb) {
@@ -206,6 +222,7 @@ async.series([
     }
 ], function (err) {
     if (err) {
+        console.error(err.message);
         process.exit(1);
     }
     console.log(JSON.stringify(final_sysinfo, null, 2));
