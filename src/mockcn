@@ -19,17 +19,7 @@ cat > /tmp/user_script.$$ <<EOF
 set -o xtrace
 set -o errexit
 
-SYSINFO_FILE=/tmp/sysinfos.\$\$
-
-mdata-get sysinfo > \${SYSINFO_FILE}
-for uuid in \$(json -a UUID < \${SYSINFO_FILE}); do
-    mkdir -p /mockcn/\${uuid}/vms
-    json -a -c "this.UUID == '\${uuid}'" < \${SYSINFO_FILE} > /mockcn/\${uuid}/sysinfo.json.in
-    /opt/smartdc/mockcn/bin/sysinfo /mockcn/\${uuid}/sysinfo.json.in \
-        > /mockcn/\${uuid}/sysinfo.json
-    rm /mockcn/\${uuid}/sysinfo.json.in
-done
-
+/opt/smartdc/bin/update-sysinfo
 svccfg import /opt/smartdc/mockcn/smf/ur.xml
 
 exit 0

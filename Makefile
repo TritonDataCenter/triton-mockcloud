@@ -70,6 +70,7 @@ pkg: all
 	cp -PR ur-modules/* \
 		$(MOCKCN_PKG_DIR)/ur-agent/node_modules
 	cp src/sysinfo.js $(MOCKCN_PKG_DIR)/bin/sysinfo
+	cp src/update-sysinfo.sh $(MOCKCN_PKG_DIR)/bin/update-sysinfo
 	# Clean up some dev / build bits
 	find $(PKG_DIR) -name "*.pyc" | xargs rm -f
 	find $(PKG_DIR) -name "*.o" | xargs rm -f
