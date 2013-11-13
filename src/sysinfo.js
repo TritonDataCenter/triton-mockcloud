@@ -111,6 +111,10 @@ async.series([
             if (process.argv[2] && process.argv[2] == '-p') {
                 output_parsable = true;
             }
+            if (process.argv[2] && process.argv[2] == '-u') {
+                // we don't need to do anything for sysinfo -u
+                process.exit(0);
+            }
             cb();
             return;
         }
