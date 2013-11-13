@@ -51,8 +51,8 @@ var default_sysinfo = {
 };
 
 var parsable_properties = {
-    'SYSINFO_SDC_Version': 'SDC Version',
-    'SYSINFO_MiB_of_Memory': 'MiB of Memory'
+    'SDC_Version': 'SDC Version',
+    'MiB_of_Memory': 'MiB of Memory'
 };
 
 var filename;

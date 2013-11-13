@@ -6,7 +6,8 @@ vm_uuid=$(uuid)
 
 # setup
 sdc-sapi /services/$(sdc-sapi /services?name=dhcpd | json -Ha uuid) \
-    -X PUT -d '{ "metadata": { "allow_missing_class_id": true } }'
+    -X PUT -d '{ "metadata": { "allow_missing_class_id": true } }' \
+    | json metadata.allow_missing_class_id
 imgadm sources -a https://updates.joyent.com/
 
 # import latest
@@ -19,11 +20,9 @@ cat > /tmp/user_script.$$ <<EOF
 set -o xtrace
 set -o errexit
 
-/opt/smartdc/mockcn/bin/update-sysinfo
-mount -F lofs /opt/smartdc/mockcn/bin/sysinfo /usr/bin/sysinfo
-svccfg import /opt/smartdc/mockcn/smf/ur.xml
+exec /opt/smartdc/mockcn/bin/init.sh
 
-exit 0
+exit 2
 EOF
 
 (cat > /tmp/sysinfo.$$) <<EOF
