@@ -50,10 +50,16 @@ var default_sysinfo = {
     }
 };
 
+var parsable_properties = {
+    'SYSINFO_SDC_Version': 'SDC Version',
+    'SYSINFO_MiB_of_Memory': 'MiB of Memory'
+};
+
 var filename;
 var loaded_sysinfo = {};
 var final_sysinfo = {};
 var added_admin = false;
+var output_parsable = false;
 var nic_types = {'ixgbe': 0, 'igb': 0, 'bnx': 0};
 
 function addNic(sysinfo, callback)
@@ -102,7 +108,9 @@ async.series([
         if (process.env['MOCKCN_SERVER_UUID']) {
             filename = '/mockcn/' + process.env['MOCKCN_SERVER_UUID']
                 + '/sysinfo.json';
-            console.log('USING FILE:' + filename);
+            if (process.argv[2] && process.argv[2] == '-p') {
+                output_parsable = true;
+            }
             cb();
             return;
         }
@@ -160,7 +168,7 @@ async.series([
         cb();
     }, function (cb) {
         if (!final_sysinfo.hasOwnProperty('Boot Time')) {
-						// sysinfo has 'Boot Time' as a string
+            // sysinfo has 'Boot Time' as a string
             final_sysinfo['Boot Time']
                 = Math.floor(new Date().getTime() / 1000).toString();
         }
@@ -225,5 +233,12 @@ async.series([
         console.error(err.message);
         process.exit(1);
     }
-    console.log(JSON.stringify(final_sysinfo, null, 2));
+    if (output_parsable) {
+        Object.keys(parsable_properties).forEach(function (opt) {
+            console.log(opt + '='
+                + JSON.stringify(final_sysinfo[parsable_properties[opt]]));
+        });
+    } else {
+        console.log(JSON.stringify(final_sysinfo, null, 2));
+    }
 });
