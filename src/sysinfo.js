@@ -7,72 +7,47 @@ var execFile = cp.execFile;
 var fs = require('fs');
 var sprintf = require('/usr/node/node_modules/sprintf').sprintf;
 
-/*
-
-  "Boot Time": "1375216140",
-  "Datacenter Name": "us-beta-4",
-  "UUID": "00000000-0000-0000-0000-00259094373c",
-  "Hostname": "00-25-90-94-37-3c",
-
-  "Boot Parameters": {
-    "hostname": "00-25-90-94-37-3c",
-    "rabbitmq": "guest:guest:10.3.1.23:5672",
-    "rabbitmq_dns": "guest:guest:rabbitmq.us-beta-4.joyent.us:5672",
-    "admin_nic": "00:25:90:94:37:3c",
-    "external_nic": "90:e2:ba:2a:bb:18",
-  },
-  "Network Interfaces": {
-    "igb0": {"MAC Address": "00:25:90:94:37:3c", "ip4addr": "10.3.1.37", "Link Status": "up", "NIC Names": ["admin"]},
-    "igb1": {"MAC Address": "00:25:90:94:37:3d", "ip4addr": "", "Link Status": "down", "NIC Names": []},
-    "igb2": {"MAC Address": "00:25:90:94:37:3e", "ip4addr": "", "Link Status": "down", "NIC Names": []},
-    "igb3": {"MAC Address": "00:25:90:94:37:3f", "ip4addr": "", "Link Status": "down", "NIC Names": []},
-    "ixgbe0": {"MAC Address": "90:e2:ba:2a:bb:18", "ip4addr": "", "Link Status": "up", "NIC Names": ["external"]},
-    "ixgbe1": {"MAC Address": "90:e2:ba:2a:bb:19", "ip4addr": "", "Link Status": "down", "NIC Names": []}
-  },
-
-*/
-
 var default_sysinfo = {
-  "System Type": "SunOS",
-  "SDC Version": "7.0",
-  "Manufacturer": "Supermicro",
-  "Product": "X9DRD-7LN4F",
-  "SKU Number": "",
-  "HW Version": "",
-  "HW Family": "",
-  "Serial Number": "0123456789",
-  "VM Capable": true,
-  "CPU Type": "Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz",
-  "CPU Virtualization": "vmx",
-  "CPU Physical Cores": 2,
-  "CPU Total Cores": 32,
-  "MiB of Memory": "131043",
-  "Disks": {
-    "c0t5000A7203007B1A9d0": {"Size in GB": 100},
-    "c10t5000CCA0160D6E5Dd0": {"Size in GB": 600},
-    "c11t5000CCA022019BEDd0": {"Size in GB": 600},
-    "c12t5000CCA022008921d0": {"Size in GB": 600},
-    "c13t5000CCA01610CA05d0": {"Size in GB": 600},
-    "c1t5000CCA02203FAFDd0": {"Size in GB": 600},
-    "c2t5000CCA016148695d0": {"Size in GB": 600},
-    "c3t5000CCA022016BADd0": {"Size in GB": 600},
-    "c4t5000CCA02201A4C5d0": {"Size in GB": 600},
-    "c5t5000CCA0220199C1d0": {"Size in GB": 600},
-    "c6t5000CCA02200C8C1d0": {"Size in GB": 600},
-    "c7t5000CCA02203CA49d0": {"Size in GB": 600},
-    "c8t5000CCA016148709d0": {"Size in GB": 600},
-    "c9t5000CCA0160EB825d0": {"Size in GB": 600}
-  },
-  "Boot Parameters": {
-    "console": "text",
-    "text_mode": "115200,8,n,1,-"
-  },
-  "Network Interfaces": {
-  },
-  "Virtual Network Interfaces": {
-  },
-  "Link Aggregations": {
-  }
+    "System Type": "SunOS",
+    "SDC Version": "7.0",
+    "Manufacturer": "Supermicro",
+    "Product": "X9DRD-7LN4F",
+    "SKU Number": "",
+    "HW Version": "",
+    "HW Family": "",
+    "Serial Number": "0123456789",
+    "VM Capable": true,
+    "CPU Type": "Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz",
+    "CPU Virtualization": "vmx",
+    "CPU Physical Cores": 2,
+    "CPU Total Cores": 32,
+    "MiB of Memory": "131043",
+    "Disks": {
+        "c0t5000A7203007B1A9d0": {"Size in GB": 100},
+        "c10t5000CCA0160D6E5Dd0": {"Size in GB": 600},
+        "c11t5000CCA022019BEDd0": {"Size in GB": 600},
+        "c12t5000CCA022008921d0": {"Size in GB": 600},
+        "c13t5000CCA01610CA05d0": {"Size in GB": 600},
+        "c1t5000CCA02203FAFDd0": {"Size in GB": 600},
+        "c2t5000CCA016148695d0": {"Size in GB": 600},
+        "c3t5000CCA022016BADd0": {"Size in GB": 600},
+        "c4t5000CCA02201A4C5d0": {"Size in GB": 600},
+        "c5t5000CCA0220199C1d0": {"Size in GB": 600},
+        "c6t5000CCA02200C8C1d0": {"Size in GB": 600},
+        "c7t5000CCA02203CA49d0": {"Size in GB": 600},
+        "c8t5000CCA016148709d0": {"Size in GB": 600},
+        "c9t5000CCA0160EB825d0": {"Size in GB": 600}
+    },
+    "Boot Parameters": {
+        "console": "text",
+        "text_mode": "115200,8,n,1,-"
+    },
+    "Network Interfaces": {
+    },
+    "Virtual Network Interfaces": {
+    },
+    "Link Aggregations": {
+    }
 };
 
 var filename;
@@ -99,9 +74,9 @@ function addNic(sysinfo, callback)
         nic['NIC Names'] = ['admin'];
         nic['Link Status'] = 'up';
 
-				if (!sysinfo['Boot Parameters'].hasOwnProperty('admin_nic')) {
-						sysinfo['Boot Parameters']['admin_nic'] = mac;
-				}
+        if (!sysinfo['Boot Parameters'].hasOwnProperty('admin_nic')) {
+            sysinfo['Boot Parameters']['admin_nic'] = mac;
+        }
 
         added_admin = true;
     } else {
@@ -113,11 +88,11 @@ function addNic(sysinfo, callback)
         }
     }
 
-		type_idx = Math.floor(Math.random() * Object.keys(nic_types).length);
-		type = Object.keys(nic_types)[type_idx];
+    type_idx = Math.floor(Math.random() * Object.keys(nic_types).length);
+    type = Object.keys(nic_types)[type_idx];
 
     sysinfo['Network Interfaces'][type + nic_types[type]] = nic;
-		nic_types[type] += 1;
+    nic_types[type] += 1;
 
     callback();
 }
@@ -156,10 +131,24 @@ async.series([
 
         cb();
     }, function (cb) {
+        if (final_sysinfo.hasOwnProperty('Live Image')) {
+            cb();
+            return;
+        }
+
+        execFile('/usr/bin/uname', ['-v'], function (err, stdout, stderr) {
+            if (err) {
+                cb(err);
+                return;
+            }
+            final_sysinfo['Live Image'] = stdout.replace('\n', '').split('_')[1];
+            cb();
+        });
+    }, function (cb) {
         if (!final_sysinfo.hasOwnProperty('Hostname')) {
             final_sysinfo['Hostname'] = 'MOCKCN' + Math.floor(Math.random() * 200);
-				}
-				cb();
+        }
+        cb();
     }, function (cb) {
         if (!final_sysinfo.hasOwnProperty('Datacenter Name')) {
             cb();
@@ -176,8 +165,8 @@ async.series([
             final_sysinfo['Datacenter Name'] = stdout.replace('\n', '');
             cb();
         });
-    // TODO set rabbitmq in Boot Params
-		}, function (cb) {
+        // TODO set rabbitmq in Boot Params
+  }, function (cb) {
         var add_nics;
 
         /*
@@ -197,10 +186,10 @@ async.series([
                 function () { return add_nics > 0; },
                 function (callback) {
                     addNic(final_sysinfo, function (err) {
-												if (!err) {
-														add_nics = add_nics - 1;
-												}
-												callback(err);
+                        if (!err) {
+                            add_nics = add_nics - 1;
+                        }
+                        callback(err);
                     });
                 },
                 function (err) {
