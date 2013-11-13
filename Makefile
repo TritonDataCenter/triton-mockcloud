@@ -69,6 +69,9 @@ pkg: all
 		$(MOCKCN_PKG_DIR)/ur-agent
 	cp -PR ur-modules/* \
 		$(MOCKCN_PKG_DIR)/ur-agent/node_modules
+	cp src/disklayout.js $(MOCKCN_PKG_DIR)/bin/disklayout
+	cp src/diskjson.js $(MOCKCN_PKG_DIR)/bin/diskjson
+	cp src/init.sh $(MOCKCN_PKG_DIR)/bin/
 	cp src/sysinfo.js $(MOCKCN_PKG_DIR)/bin/sysinfo
 	cp src/update-sysinfo.sh $(MOCKCN_PKG_DIR)/bin/update-sysinfo
 	# Clean up some dev / build bits
