@@ -19,7 +19,7 @@ mount -F lofs /opt/smartdc/mockcn/bin/sysinfo /usr/bin/sysinfo
 # make config.sh read config from correct place
 mkdir -p /opt/smartdc/mockcn/tmp
 cp /lib/sdc/config.sh /opt/smartdc/mockcn/tmp/config.sh
-patch /opt/smartdc/mockcn/tmp/config.sh <<"EOF"
+gpatch /opt/smartdc/mockcn/tmp/config.sh <<"EOF"
 --- /lib/sdc/config.sh  2013-11-10 07:48:35.629886000 +0000
 +++ config.sh   2013-11-13 21:41:04.651518490 +0000
 @@ -26,6 +26,9 @@
