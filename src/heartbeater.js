@@ -420,7 +420,6 @@ function lookupVMs(callback)
                             throw e;
                         }
                         vmobj = JSON.parse(data);
-                        console.dir(vmobj);
                         vmobj.last_modified = stats.mtime.toISOString();
                         vmobj.zone_id = idx;
                         idx = idx + 1;
