@@ -13,7 +13,7 @@ echo "zpool $*" >> ${log}
 
 function unsupported()
 {
-		echo "UNSUPPORTED[$*]" >> ${log}
+    echo "UNSUPPORTED[$*]" >> ${log}
     exit 1
 }
 

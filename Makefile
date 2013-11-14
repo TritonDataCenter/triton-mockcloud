@@ -62,6 +62,7 @@ pkg: all
 	mkdir -p $(MOCKCN_PKG_DIR)/ur-agent
 	mkdir -p $(MOCKCN_PKG_DIR)/bin
 	mkdir -p $(MOCKCN_PKG_DIR)/lib
+	mkdir -p $(MOCKCN_PKG_DIR)/provisioner-tasks
 	cp -PR smf \
 		$(MOCKCN_PKG_DIR)
 	cp ur-agent/ur-agent ur-agent/amqp-plus.js \
@@ -74,6 +75,8 @@ pkg: all
 	cp src/disklayout.js $(MOCKCN_PKG_DIR)/bin/disklayout
 	cp src/diskjson.js $(MOCKCN_PKG_DIR)/bin/diskjson
 	cp src/init.sh $(MOCKCN_PKG_DIR)/bin/
+	[[ -d provisioner-tasks ]] \
+		&& cp provisioner-tasks/* $(MOCKCN_PKG_DIR)/provisioner-tasks/
 	cp src/sysinfo.js $(MOCKCN_PKG_DIR)/bin/sysinfo
 	cp lib/system.js $(MOCKCN_PKG_DIR)/lib/system.js
 	cp src/update-sysinfo.sh $(MOCKCN_PKG_DIR)/bin/update-sysinfo
