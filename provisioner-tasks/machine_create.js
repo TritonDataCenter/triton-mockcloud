@@ -85,27 +85,12 @@ function pre_check(callback) {
             });
         },
         function (cb) {
-            // If we don't get an error on this `list` it means the dataset
-            // exists.
-            zfs.list(
-            zoneDataset, { type: 'all' }, function (error, fields, list) {
-                if (list && list.length) {
-                    cb(new Error('Dataset ' + zoneDataset + ' exists.'));
-                    return;
-                }
-                cb();
-            });
+            // XXX good news! Your dataset doesn't already exist!
+            cb();
         },
         function (cb) {
-            // If we don't get an error on this `list` it means the snapshot for
-            // the zone template exists.
-            zfs.list(zoneSnapshot, { type: 'all' },  function (error) {
-                if (!error) {
-                    cb(new Error('Snapshot ' + zoneSnapshot + ' exists.'));
-                    return;
-                }
-                cb();
-            });
+            // XXX good news! Your snapshot doesn't already exist!
+            cb();
         }
     ],
     function (error) {
@@ -165,13 +150,25 @@ function normalizeError(error) {
 
 function create_machine(callback) {
     var self = this;
-    var zone_json;
     var req = self.req;
+    var vmobj;
+    var zone_json;
 
     zone_json = path.join('/mockcn', process.env['MOCKCN_SERVER_UUID'], 'vms',
         req.params.uuid + '.json');
 
-    fs.writeFile(zone_json, JSON.stringify(req.params, null, 2), callback);
+    vmobj = req.params;
+    vmobj.cpu_cap = vmobj.cpu_cap || 800;
+    vmobj.max_physical_memory = vmobj.max_physical_memory || 256;
+    vmobj.do_not_inventory = vmobj.do_not_inventory || false;
+    vmobj.owner_uuid = vmobj.owner_uuid || '00000000-0000-0000-0000-000000000000';
+    vmobj.quota = vmobj.quota || 10;
+    vmobj.state = 'running';
+    vmobj.zonename = vmobj.zonename || vmobj.uuid;
+    vmobj.zonepath = vmobj.zonepath || '/zones/' + vmobj.uuid;
+    vmobj.zone_state = 'running';
+
+    fs.writeFile(zone_json, JSON.stringify(vmobj, null, 2), callback);
 }
 
 MachineCreateTask.setStart(start);

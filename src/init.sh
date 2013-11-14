@@ -51,6 +51,9 @@ mount -F lofs /opt/smartdc/mockcn/tmp/config.sh /lib/sdc/config.sh
 # replace disklayout with our version
 mount -F lofs /opt/smartdc/mockcn/bin/disklayout /usr/bin/disklayout
 
+# replace zoneevent
+mount -F lofs /opt/smartdc/mockcn/bin/zoneevent /usr/vm/sbin/zoneevent
+
 # replace z* tools with our versions
 mount -F lofs /opt/smartdc/mockcn/bin/zoneadm /usr/sbin/zoneadm
 mount -F lofs /opt/smartdc/mockcn/bin/zfs /usr/sbin/zfs
