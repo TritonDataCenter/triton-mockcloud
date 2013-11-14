@@ -1,20 +1,59 @@
 #!/bin/bash
 
-set -o xtrace
+if [[ -n ${TRACE} ]]; then
+    set -o xtrace
+fi
 
 vm_uuid=$(uuid)
 
-# setup
-sdc-sapi /services/$(sdc-sapi /services?name=dhcpd | json -Ha uuid) \
-    -X PUT -d '{ "metadata": { "allow_missing_class_id": true } }' \
-    | json metadata.allow_missing_class_id
-imgadm sources -a https://updates.joyent.com/
+function usage()
+{
+    cat <<EOF
+Usage: $0 <action> [options]
 
-# import latest
-latest=$(imgadm avail | grep mockcn | tail -1 | cut -d ' ' -f 1)
-imgadm import ${latest}
+Actions:
 
-cat > /tmp/user_script.$$ <<EOF
+ create [<JSON-file>] - adds additional mock CN
+ delete <uuid>        - remove a mock CN [NOT IMPLEMENTED]
+ list                 - list all the mock CNs available on this real node [NOT IMPLEMENTED]
+ help                 - this message
+ login <uuid>         - zlogins to a "CN-like" environment [NOT IMPLEMENTED]
+ setup                - sets up system for mocking a CN
+
+EOF
+
+    exit 2
+}
+
+if [[ $1 == "setup" ]]; then
+    # setup
+    result=$(sdc-sapi /services/$(sdc-sapi /services?name=dhcpd | json -Ha uuid) \
+        -X PUT -d '{ "metadata": { "allow_missing_class_id": true } }' \
+        | json metadata.allow_missing_class_id)
+    if [[ ${result} != "true" ]]; then
+        echo "Failed to configure SAPI for DHCP booting zones." >&2
+        exit 1
+    else
+        echo "SAPI is now configured for DHCP booting zones." >&2
+    fi
+
+    # Add source
+    imgadm sources -a https://updates.joyent.com/
+
+    echo "Importing latest mockcn image..."
+    latest=$(imgadm avail | grep mockcn | tail -1 | cut -d ' ' -f 1)
+    imgadm import ${latest}
+
+elif [[ $1 == "create" ]]; then
+
+    latest=$(imgadm list -o published_at,name,uuid | grep " mockcn " | sort | tail -1 | awk '{ print $3 }')
+    if [[ -z ${latest} ]]; then
+        echo "Unable to find latest mockcn image." >&2
+        exit 1
+    fi
+
+    echo "Creating user-script..."
+    cat > /tmp/user_script.$$ <<EOF
 #!/bin/bash
 
 set -o xtrace
@@ -25,19 +64,19 @@ exec /opt/smartdc/mockcn/bin/init.sh
 exit 2
 EOF
 
-(cat > /tmp/sysinfo.$$) <<EOF
+    (cat > /tmp/sysinfo.$$) <<EOF
 [{
     "UUID": "${vm_uuid}"
 }]
 EOF
 
-(cat > /tmp/payload.0.$$) <<EOF
+    (cat > /tmp/payload.0.$$) <<EOF
 {
  "uuid": "${vm_uuid}",
  "brand": "joyent-minimal",
  "quota": 20,
  "image_uuid": "${latest}",
- "max_physical_memory": 256,
+ "ram": 1536,
  "archive_on_delete": true,
  "alias": "mockcn0",
  "customer_metadata": {
@@ -54,6 +93,9 @@ EOF
 }
 EOF
 
-/usr/vm/sbin/add-userscript /tmp/user_script.$$ < /tmp/payload.0.$$ > /tmp/payload.1.$$
-
-vmadm create -f /tmp/payload.1.$$
+    echo "Creating VM..."
+    /usr/vm/sbin/add-userscript /tmp/user_script.$$ < /tmp/payload.0.$$ > /tmp/payload.1.$$
+    vmadm create -f /tmp/payload.1.$$
+else
+    usage
+fi

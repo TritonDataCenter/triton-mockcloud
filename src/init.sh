@@ -51,6 +51,14 @@ mount -F lofs /opt/smartdc/mockcn/tmp/config.sh /lib/sdc/config.sh
 # replace disklayout with our version
 mount -F lofs /opt/smartdc/mockcn/bin/disklayout /usr/bin/disklayout
 
+# replace z* tools with our versions
+mount -F lofs /opt/smartdc/mockcn/bin/zoneadm /usr/sbin/zoneadm
+mount -F lofs /opt/smartdc/mockcn/bin/zfs /usr/sbin/zfs
+mount -F lofs /opt/smartdc/mockcn/bin/zpool /usr/sbin/zpool
+
+# replace system.js so we load faked up memory info in heartbeater
+mount -F lofs /opt/smartdc/mockcn/lib/system.js /usr/node/node_modules/system.js
+
 # start ur agent which makes CN show up
 svccfg import /opt/smartdc/mockcn/smf/ur.xml
 
