@@ -69,7 +69,7 @@ pkg: all
 		$(MOCKCN_PKG_DIR)/ur-agent
 	cp -PR ur-modules/* \
 		$(MOCKCN_PKG_DIR)/ur-agent/node_modules
-	cp src/amqp-config.sh $(MOCKCN_PKG_DIR)/bin/amqp-config
+	cp src/amqp-config.js $(MOCKCN_PKG_DIR)/bin/amqp-config
 	cp src/disklayout.js $(MOCKCN_PKG_DIR)/bin/disklayout
 	cp src/diskjson.js $(MOCKCN_PKG_DIR)/bin/diskjson
 	cp src/init.sh $(MOCKCN_PKG_DIR)/bin/
