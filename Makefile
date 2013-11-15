@@ -75,6 +75,7 @@ pkg: all
 	cp src/disklayout.js $(MOCKCN_PKG_DIR)/bin/disklayout
 	cp src/diskjson.js $(MOCKCN_PKG_DIR)/bin/diskjson
 	cp src/heartbeater.js $(MOCKCN_PKG_DIR)/bin/heartbeater.js
+	cp src/fix-agents.sh $(MOCKCN_PKG_DIR)/bin/fix-agents.sh
 	cp src/init.sh $(MOCKCN_PKG_DIR)/bin/
 	[[ -d provisioner-tasks ]] \
 		&& cp provisioner-tasks/* $(MOCKCN_PKG_DIR)/provisioner-tasks/ || /bin/true
