@@ -61,7 +61,7 @@ pkg: all
 	rm -rf $(PKG_DIR)
 	mkdir -p $(MOCKCN_PKG_DIR)/ur-agent
 	mkdir -p $(MOCKCN_PKG_DIR)/bin
-	mkdir -p $(MOCKCN_PKG_DIR)/lib
+	mkdir -p $(MOCKCN_PKG_DIR)/node_modules
 	mkdir -p $(MOCKCN_PKG_DIR)/provisioner-tasks
 	cp -PR smf \
 		$(MOCKCN_PKG_DIR)
@@ -80,8 +80,7 @@ pkg: all
 	[[ -d provisioner-tasks ]] \
 		&& cp provisioner-tasks/* $(MOCKCN_PKG_DIR)/provisioner-tasks/ || /bin/true
 	cp src/sysinfo.js $(MOCKCN_PKG_DIR)/bin/sysinfo
-	cp lib/system.js $(MOCKCN_PKG_DIR)/lib/system.js
-	cp src/update-sysinfo.sh $(MOCKCN_PKG_DIR)/bin/update-sysinfo
+	cp node_modules/*.js $(MOCKCN_PKG_DIR)/node_modules/
 	cp src/zfs.sh $(MOCKCN_PKG_DIR)/bin/zfs
 	cp src/zoneadm.sh $(MOCKCN_PKG_DIR)/bin/zoneadm
 	cp src/zoneevent.js $(MOCKCN_PKG_DIR)/bin/zoneevent

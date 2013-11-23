@@ -3,18 +3,16 @@
 set -o errexit
 set -o xtrace
 
-/opt/smartdc/mockcn/bin/update-sysinfo
-
 # replace sysinfo with our version
 mount -F lofs /opt/smartdc/mockcn/bin/sysinfo /usr/bin/sysinfo
 
 # create disks.json from sysinfo, used by disklayout when doing setup
-(
-    for uuid in $(ls -1 /mockcn); do
-        MOCKCN_SERVER_UUID=${uuid} /opt/smartdc/mockcn/bin/diskjson \
-            > /mockcn/${uuid}/disks.json
-    done
-)
+#(
+    #for uuid in $(ls -1 /mockcn); do
+        #MOCKCN_SERVER_UUID=${uuid} /opt/smartdc/mockcn/bin/diskjson \
+            #> /mockcn/${uuid}/disks.json
+    #done
+#)
 
 # make config.sh read config from correct place
 mkdir -p /opt/smartdc/mockcn/tmp
@@ -60,9 +58,9 @@ mount -F lofs /opt/smartdc/mockcn/bin/zfs /usr/sbin/zfs
 mount -F lofs /opt/smartdc/mockcn/bin/zpool /usr/sbin/zpool
 
 # replace system.js so we load faked up memory info in heartbeater
-mount -F lofs /opt/smartdc/mockcn/lib/system.js /usr/node/node_modules/system.js
+mount -F lofs /opt/smartdc/mockcn/node_modules/system.js /usr/node/node_modules/system.js
 
-# start ur agent which makes CN show up
+# start mock-agent
 svccfg import /opt/smartdc/mockcn/smf/ur.xml
 
 exit 0
