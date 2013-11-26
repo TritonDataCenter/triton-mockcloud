@@ -4,6 +4,7 @@
 var async = require('/usr/node/node_modules/async');
 var bunyan = require('/usr/node/node_modules/bunyan');
 var canned_profiles = require('../lib/canned_profiles.json');
+var dhcpclient = require('dhcpclient');
 var execFile = require('child_process').execFile;
 var fs = require('fs');
 var http = require('http');
@@ -48,21 +49,7 @@ CN_PROPERTIES = {
 };
 
 /*
-CANNED_HARDWARE_PROFILES = {
-    "C2100": {
-        "CPU Physical Cores": 2,
-        "CPU Total Cores": 16,
-        "CPU Type": "Intel(R) Xeon(R) CPU E5530 @ 2.40GHz",
-        "CPU Virtualization": "vmx",
-        "Disks": {
-            "c0t37E44117BC62A1E3d0": {"Size in GB": 597, "PID": "Logical Volume", "VID": "LSI"},
-            "c1t0d0": {"Size in GB": 2096, "PID": "PERC H700", "VID": "DELL"}
-        },
-*/
-
-
-/*
- * These properties are ignored (they get set for you):
+ * XXX: TODO: These properties are ignored (they get set for you):
  *
  * "Boot Parameters" // from CNAPI? or TFTP
  * "Datacenter Name"
@@ -205,11 +192,13 @@ function monitorMockCNs() {
         });
     }
 
+/*
     // Setup fs.watcher for this DIR to add and remove instances when
     fs.watch(MOCKCN_DIR, function () {
         // we don't care about *what* event just happened, just that one did
         refreshMockCNs();
     })
+*/
 
     // call refreshMockCNs() to set the initial mock CNs
     refreshMockCNs();
@@ -329,7 +318,7 @@ function loadState(callback) {
 }
 
 function saveState(callback) {
-    fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2), function (err) {
+    fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2) + '\n', function (err) {
         if (err) {
             callback(err);
             return;
@@ -351,6 +340,7 @@ function addMAC(nic, mock_oui, cn_index, nic_index, callback) {
 }
 
 function applyDefaults(uuid, cnobj, callback) {
+    var admin_nic;
     var cn_index;
     var mock_oui;
     var payload = cnobj;
@@ -457,41 +447,155 @@ function applyDefaults(uuid, cnobj, callback) {
             nics = Object.keys(payload['Network Interfaces']);
 
             async.forEach(nics, function (n, c) {
-                addMAC(payload['Network Interfaces'][n], mock_oui, cn_index,
-                    nic_index++, c);
+                var nic = payload['Network Interfaces'][n];
+                addMAC(nic, mock_oui, cn_index, nic_index++, c);
+                if (nic.hasOwnProperty('NIC Names')
+                    && nic['NIC Names'].indexOf('admin') !== -1) {
+
+                    admin_nic = nic;
+                } else if (nic_index === 1 && !admin_nic) {
+                    // default to first one in case we don't have specified one
+                    admin_nic = nic;
+                }
             }, function (e) {
                 cb(e);
             });
+        }, function (cb) {
+            // DO DHCP to get IP for admin NIC
+            dhcpclient.getIP(admin_nic['MAC Address'], payload['UUID'],
+                function (e, result) {
+
+                if (e) {
+                    cb(e);
+                    return;
+                }
+
+                admin_nic['ip4addr'] = result.ip;
+
+                cb();
+                return;
+            });
+        }, function (cb) {
+            if (payload.hasOwnProperty('Hostname')) {
+                cb();
+                return;
+            }
+
+            payload['Hostname'] = admin_nic['MAC Address'].replace(/:/g, '-');
+            cb();
         }
+        // XXX TODO: randomize disk names (eg. c0t37E44117BC62A1E3d0)
     ], function (err) {
         if (err) {
             log.error({err: err}, 'failed!');
         }
         callback(err, payload);
     });
-
-    // XXX TODO: randomize disk names (eg. c0t37E44117BC62A1E3d0)
-
-    // TODO: add MAC addresses to all NICs
-
-    // TODO: set Hostname to admin MAC s/:/-/
 }
 
 function createServer(uuid, cnobj, res) {
+    var payload;
     var validated;
 
     log.debug({cnobj: cnobj}, 'creating ' + uuid + ' original payload');
 
-    validated = validateServer(uuid, cnobj);
-    if (!validated) {
-        returnError(400, {}, res);
-        return;
-    }
+    async.series([
+        function (cb) {
+            validated = validateServer(uuid, cnobj);
+            if (!validated) {
+                returnError(400, {}, res);
+                cb(new Error('Validation failed'));
+                return;
+            }
+            log.debug({cnobj: validated}, 'validated payload');
+            cb();
+        }, function (cb) {
+            applyDefaults(uuid, validated, function (err, data) {
+                if (!err) {
+                    payload = data;
+                    log.debug({cnobj: payload}, 'after applying defaults');
+                }
+                cb(err);
+            });
+        }, function (cb) {
+            var uuid = payload['UUID'];
 
-    log.debug({cnobj: validated}, 'validated payload');
+            // make directory
+            fs.mkdir('/mockcn', 0755, function (e) {
+                if (e && e.code !== 'EEXIST') {
+                    log.error({err: e}, 'Error creating /mockcn');
+                    cb(e);
+                    return;
+                }
+                fs.mkdir('/mockcn/' + uuid, 0755, function (mkdir_uuid_e) {
+                    if (mkdir_uuid_e) {
+                        log.error({err: e}, 'Error creating /mockcn/' + uuid);
+                        cb(mkdir_uuid_e);
+                        return;
+                    }
 
-    applyDefaults(uuid, validated, function (err, payload) {
-        log.debug({cnobj: payload}, 'after applying defaults');
+                    cb();
+                });
+            });
+        }, function (cb) {
+            var disks = [];
+            var uuid = payload['UUID'];
+
+            // write disks
+            Object.keys(payload['Disks']).forEach(function (d) {
+                var size = payload['Disks'][d]['Size in GB'];
+
+                size = (size * 1000 * 1000 * 1000);
+                disks.push({
+                    type: 'SCSI',
+                    name: d,
+                    vid: payload['Disks'][d]['VID'] ? payload['Disks'][d]['VID'] : 'HITACHI',
+                    pid: payload['Disks'][d]['PID'] ? payload['Disks'][d]['PID'] : 'HUC109060CSS600',
+                    size: size,
+                    removable: false,
+                    solid_state: payload['Disks'][d]['SSD'] ? true : false
+                });
+
+                // Some properties only exist until we've written out the
+                // disks.json and don't go to sysinfo, we remove those now
+                delete payload['Disks'][d]['VID'];
+                delete payload['Disks'][d]['PID'];
+                delete payload['Disks'][d]['SSD'];
+            });
+
+            fs.writeFile('/mockcn/' + uuid + '/disks.json',
+                JSON.stringify(disks, null, 2) + '\n', function (err) {
+
+                cb(err);
+            });
+        }, function (cb) {
+            // write sysinfo
+            fs.writeFile('/mockcn/' + uuid + '/sysinfo.json',
+                JSON.stringify(payload, null, 2) + '\n', function (err) {
+
+                cb(err);
+            });
+        }, function (cb) {
+            // write out the global state file
+            saveState(cb);
+        }, function (cb) {
+            var uuid = payload['UUID'];
+
+            // start this guy up
+            mockCNs[uuid] = new UrAgent({
+                sysinfoFile: '/mockcn/' + uuid + '/sysinfo.json',
+                setupStateFile: '/mockcn/' + uuid + '/setup.json',
+                urStartupFilePath: '/tmp/' + uuid + '.tmp-' + genId(),
+                mockCNServerUUID: uuid
+            });
+
+            cb();
+        }
+    ], function (err) {
+        if (err) {
+            returnError(500, {}, res);
+            return;
+        }
         res.writeHead(201, {
             'Content-Type': 'application/json'
         });

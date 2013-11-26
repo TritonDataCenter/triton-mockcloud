@@ -25,6 +25,18 @@ if [[ -n $(vmadm lookup -1 alias="${zone_alias}") ]]; then
     exit 1
 fi
 
+OWNER_UUID=$(grep "^ufds_admin_uuid" /usbkey/config | cut -d'=' -f2)
+if [[ -z ${OWNER_UUID} ]]; then
+    echo "Cannot find OWNER_UUID" >&2
+    exit 1
+fi
+
+RABBITMQ_INFO=$(grep "^rabbitmq=" /usbkey/config | cut -d'=' -f2)
+if [[ -z ${RABBITMQ_INFO} ]]; then
+    echo "Cannot find RABBITMQ_INFO" >&2
+    exit 1
+fi
+
 # Add source
 imgadm sources -a https://updates.joyent.com/
 
@@ -75,12 +87,16 @@ vmadm create <<EOF
  "brand": "joyent-minimal",
  "quota": 20,
  "image_uuid": "${IMAGE_UUID}",
+ "owner_uuid": "${OWNER_UUID}",
  "ram": 1536,
  "archive_on_delete": true,
  "alias": "${zone_alias}",
+ "tags": {
+    "smartdc_role": "mockcn"
+ },
  "customer_metadata": {
      "mock_oui": "${mock_oui}",
-     "rabbitmq": "guest:guest:10.99.99.20:5672",
+     "rabbitmq": "${RABBITMQ_INFO}",
      "user-script": "#!/bin/bash\n\nset -o xtrace\nset -o errexit\n\nexec /opt/smartdc/mockcn/bin/init.sh\n\n# exec failed if we got this far.\nexit 2\n"
  },
  "nics": [
