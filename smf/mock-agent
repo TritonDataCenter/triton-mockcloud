@@ -14,7 +14,5 @@ export AMQP_PASSWORD=$(echo ${rabbitmq} | cut -d: -f2)
 export AMQP_HOST=$(echo ${rabbitmq} | cut -d: -f3)
 export AMQP_PORT=$(echo ${rabbitmq} | cut -d: -f4)
 
-# TODO: have ur-agent support multiple UUIDs
-export MOCKCN_SERVER_UUID=$(ls -1 /mockcn/ | head -1)
-
-/usr/bin/ctrun -l child -o noorphan /usr/node/bin/node --abort_on_uncaught_exception /opt/smartdc/mockcn/ur-agent/ur-agent 2>&1 &
+# The mock-agent will handle pretending to be multiple CNs
+/usr/bin/ctrun -l child -o noorphan /usr/node/bin/node --abort_on_uncaught_exception /opt/smartdc/mockcn/bin/mock-agent 2>&1 &

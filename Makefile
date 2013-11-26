@@ -61,6 +61,7 @@ pkg: all
 	rm -rf $(PKG_DIR)
 	mkdir -p $(MOCKCN_PKG_DIR)/ur-agent
 	mkdir -p $(MOCKCN_PKG_DIR)/bin
+	mkdir -p $(MOCKCN_PKG_DIR)/lib
 	mkdir -p $(MOCKCN_PKG_DIR)/node_modules
 	mkdir -p $(MOCKCN_PKG_DIR)/provisioner-tasks
 	cp -PR smf \
@@ -77,6 +78,8 @@ pkg: all
 	cp src/heartbeater.js $(MOCKCN_PKG_DIR)/bin/heartbeater.js
 	cp src/fix-agents.sh $(MOCKCN_PKG_DIR)/bin/fix-agents.sh
 	cp src/init.sh $(MOCKCN_PKG_DIR)/bin/
+	cp src/mock-agent.js $(MOCKCN_PKG_DIR)/bin/mock-agent
+	cp lib/*.json $(MOCKCN_PKG_DIR)/lib/
 	[[ -d provisioner-tasks ]] \
 		&& cp provisioner-tasks/* $(MOCKCN_PKG_DIR)/provisioner-tasks/ || /bin/true
 	cp src/sysinfo.js $(MOCKCN_PKG_DIR)/bin/sysinfo

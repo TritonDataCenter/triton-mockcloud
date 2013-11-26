@@ -1,101 +1,88 @@
 #!/bin/bash
+#
+# This script exists to create a VM to host mock CNs. Usage is:
+#
+# ./mockcn <alias>
+#
+# Where alias will be the alias of the new zone. If a VM already exists with
+# the chosen alias, the script will abort.
+#
 
 if [[ -n ${TRACE} ]]; then
     set -o xtrace
 fi
-
-vm_uuid=$(uuid)
-
-function usage()
-{
-    cat <<EOF
-Usage: $0 <action> [options]
-
-Actions:
-
- create [<JSON-file>] - adds additional mock CN
- delete <uuid>        - remove a mock CN [NOT IMPLEMENTED]
- list                 - list all the mock CNs available on this real node [NOT IMPLEMENTED]
- help                 - this message
- login <uuid>         - zlogins to a "CN-like" environment [NOT IMPLEMENTED]
- setup                - sets up system for mocking a CN
-
-EOF
-
-    exit 2
-}
-
-if [[ $1 == "setup" ]]; then
-    # setup
-    result=$(sdc-sapi /services/$(sdc-sapi /services?name=dhcpd | json -Ha uuid) \
-        -X PUT -d '{ "metadata": { "allow_missing_class_id": true } }' \
-        | json -H metadata.allow_missing_class_id)
-    if [[ ${result} != "true" ]]; then
-        echo "Failed to configure SAPI for DHCP booting zones." >&2
-        exit 1
-    else
-        echo "SAPI is now configured for DHCP booting zones." >&2
-    fi
-
-    # Add source
-    imgadm sources -a https://updates.joyent.com/
-
-    echo "Importing latest mockcn image..."
-    latest=$(imgadm avail | grep mockcn | tail -1 | cut -d ' ' -f 1)
-    imgadm import ${latest}
-
-elif [[ $1 == "create" ]]; then
-
-    latest=$(imgadm list -o published_at,name,uuid | grep " mockcn " | sort | tail -1 | awk '{ print $3 }')
-    if [[ -z ${latest} ]]; then
-        echo "Unable to find latest mockcn image." >&2
-        exit 1
-    fi
-
-    echo "Creating user-script..."
-    cat > /tmp/user_script.$$ <<EOF
-#!/bin/bash
-
-set -o xtrace
 set -o errexit
 
-exec /opt/smartdc/mockcn/bin/init.sh
+# Figure out the alias we should used (passed in or default)
+zone_alias=$1
+if [[ -z ${zone_alias} ]]; then
+    echo "Usage: $0 <alias>" >&2
+    exit 1
+fi
 
-exit 2
-EOF
+if [[ -n $(vmadm lookup -1 alias="${zone_alias}") ]]; then
+    echo "VM with alias ${zone_alias} already exists, aborting." >&2
+    exit 1
+fi
 
-    (cat > /tmp/sysinfo.$$) <<EOF
-[{
-    "UUID": "${vm_uuid}"
-}]
-EOF
+# Add source
+imgadm sources -a https://updates.joyent.com/
 
-    (cat > /tmp/payload.0.$$) <<EOF
+# Import latest image
+echo "Importing latest mockcn image..."
+IMAGE_UUID=$(imgadm avail | grep mockcn | tail -1 | cut -d ' ' -f 1)
+imgadm import ${IMAGE_UUID}
+
+# We assume owner of admin network is also the admin user.
+#napi_data=$(sdc-napi /networks?name=admin | json -Ha uuid owner_uuids.0)
+read ADMIN_NET_UUID OWNER_UUID < <(sdc-napi /networks?name=admin | json -Ha uuid owner_uuids.0)
+TMP_PAYLOAD=/tmp/payload.0.$$
+USER_SCRIPT=/tmp/user_script.$$
+VM_UUID=$(/usr/bin/uuid -v4)
+
+if [[ -z ${ADMIN_NET_UUID} ]]; then
+    echo "Unable to determine 'admin' network."
+    exit 1
+fi
+
+if [[ -z ${OWNER_UUID} ]]; then
+    echo "Unable to determine owner of 'admin' network."
+fi
+
+netobj=$((sdc-napi /networks/${ADMIN_NET_UUID}/nics -X POST -d @/dev/stdin \
+    | json -H -e 'this.belongs_to_type=undefined' \
+        -e 'this.belongs_to_uuid=undefined' \
+        -e 'this.network_uuid=undefined' \
+        -e 'this.owner_uuid=undefined' \
+        -e 'this.allow_mac_spoofing=true' \
+        -e 'this.allow_ip_spoofing=true' \
+        -e 'this.allow_dhcp_spoofing=true') \
+    < <(cat <<EOF
 {
- "uuid": "${vm_uuid}",
+    "owner_uuid": "${OWNER_UUID}",
+    "belongs_to_uuid": "${VM_UUID}",
+    "belongs_to_type": "zone",
+    "primary": true
+}
+EOF
+))
+
+echo "Creating VM..."
+vmadm create <<EOF
+{
  "brand": "joyent-minimal",
  "quota": 20,
- "image_uuid": "${latest}",
+ "image_uuid": "${IMAGE_UUID}",
  "ram": 1536,
  "archive_on_delete": true,
- "alias": "mockcn0",
+ "alias": "${zone_alias}",
  "customer_metadata": {
      "rabbitmq": "guest:guest:10.99.99.20:5672",
-     "sysinfo": $(cat /tmp/sysinfo.$$ | json -e 'this._ = JSON.stringify(this)' -j 0._)
+     "user-script": "#!/bin/bash\n\nset -o xtrace\nset -o errexit\n\nexec /opt/smartdc/mockcn/bin/init.sh\n\n# exec failed if we got this far.\nexit 2\n"
  },
  "nics": [
-   {
-     "nic_tag": "admin",
-     "ip": "dhcp",
-     "primary": true
-   }
+   ${netobj}
  ]
 }
 EOF
 
-    echo "Creating VM..."
-    /usr/vm/sbin/add-userscript /tmp/user_script.$$ < /tmp/payload.0.$$ > /tmp/payload.1.$$
-    vmadm create -f /tmp/payload.1.$$
-else
-    usage
-fi

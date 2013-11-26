@@ -61,6 +61,6 @@ mount -F lofs /opt/smartdc/mockcn/bin/zpool /usr/sbin/zpool
 mount -F lofs /opt/smartdc/mockcn/node_modules/system.js /usr/node/node_modules/system.js
 
 # start mock-agent
-svccfg import /opt/smartdc/mockcn/smf/ur.xml
+svccfg import /opt/smartdc/mockcn/smf/mock-agent.xml
 
 exit 0

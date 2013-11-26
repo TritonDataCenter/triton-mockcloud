@@ -1,0 +1,115 @@
+{
+    "C2100": {
+        "CPU Physical Cores": 2,
+        "CPU Total Cores": 16,
+        "CPU Type": "Intel(R) Xeon(R) CPU E5530 @ 2.40GHz",
+        "CPU Virtualization": "vmx",
+        "Disks": {
+            "c0t37E44117BC62A1E3d0": {"Size in GB": 597, "PID": "Logical Volume", "VID": "LSI"},
+            "c1t0d0": {"Size in GB": 2096, "PID": "PERC H700", "VID": "DELL"}
+        },
+        "HW Version": "A00",
+        "HW Family": "Server",
+        "Link Aggregations": {},
+        "Manufacturer": "Dell",
+        "MiB of Memory": "49142",
+        "Network Interfaces": {
+            "igb2": {"Link Status": "down", "NIC Names": []},
+            "igb0": {"Link Status": "up", "NIC Names": ["admin"]},
+            "igb3": {"Link Status": "up", "NIC Names": ["external"]},
+            "igb1": {"Link Status": "up", "NIC Names": []}
+        },
+        "Product": "PowerEdge C2100",
+        "Serial Number": "1234567",
+        "SKU Number": "To Be Filled By O.E.M.",
+        "Virtual Network Interfaces": {},
+        "VM Capable": true
+    }, "CS24-TY": {
+        "CPU Physical Cores": 2,
+        "CPU Total Cores": 16,
+        "CPU Type": "Intel(R) Xeon(R) CPU E5530 @ 2.40GHz",
+        "CPU Virtualization": "vmx",
+        "Disks": {
+            "c0t0d0": {"Size in GB": 146, "PID": "PERC H700", "VID": "DELL"},
+            "c0t1d0": {"Size in GB": 292, "PID": "PERC H700", "VID": "DELL"}
+        },
+        "HW Family": "Server",
+        "HW Version": "A3A",
+        "Link Aggregations": {},
+        "Manufacturer": "Dell",
+        "MiB of Memory": "16374",
+        "Network Interfaces": {
+            "igb0": {"Link Status": "up", "NIC Names": ["admin"]},
+            "igb1": {"Link Status": "up", "NIC Names": ["external"]}
+        },
+        "Product": "CS24-TY",
+        "Serial Number": "To Be Filled By O.E.M.",
+        "SKU Number": "To Be Filled By O.E.M.",
+        "Virtual Network Interfaces": {},
+        "VM Capable": true
+    }, "R610": {
+        "CPU Physical Cores": 1,
+        "CPU Total Cores": 12,
+        "CPU Type": "Intel(R) Xeon(R) CPU E5645 @ 2.40GHz",
+        "CPU Virtualization": "vmx",
+        "Disks": {
+          "c0t5000C500471E71DFd0": {"Size in GB": 600, "PID": "ST9600205SS", "VID": "SEAGATE"},
+          "c0t5000C50047201557d0": {"Size in GB": 600, "PID": "ST9600205SS", "VID": "SEAGATE"},
+          "c0t5000C500472032C7d0": {"Size in GB": 600, "PID": "ST9600205SS", "VID": "SEAGATE"}
+        },
+        "HW Version": "",
+        "HW Family": "",
+        "Link Aggregations": {},
+        "Manufacturer": "Dell Inc.",
+        "MiB of Memory": "32755",
+        "Network Interfaces": {
+            "bnx0": {"Link Status": "up", "NIC Names": ["admin"]},
+            "bnx2": {"Link Status": "down", "NIC Names": []},
+            "bnx1": {"Link Status": "down", "NIC Names": []},
+            "bnx3": {"Link Status": "down", "NIC Names": []},
+            "ixgbe0": {"Link Status": "up", "NIC Names": ["external"]},
+            "ixgbe1": {"Link Status": "down", "NIC Names": []}
+        },
+        "Product": "PowerEdge R610",
+        "Serial Number": "B2BMWR1",
+        "SKU Number": "",
+        "Virtual Network Interfaces": {},
+        "VM Capable": true
+    }, "X9DRD-7LN4F": {
+        "CPU Physical Cores": 2,
+        "CPU Total Cores": 32,
+        "CPU Type": "Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz",
+        "CPU Virtualization": "vmx",
+        "Disks": {
+          "c0t5000A7203007B041d0": {"Size in GB": 100, "SSD": true, "PID": "STEC    MACH16 M", "VID": "ATA"},
+          "c10t5000CCA0160BB271d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c11t5000CCA022016981d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c12t5000CCA02200C6B9d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c13t5000CCA022015BF5d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c1t5000CCA02201A1A5d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c2t5000CCA02203E1DDd0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c3t5000CCA022016139d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c4t5000CCA02200CB15d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c5t5000CCA016107CD5d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c6t5000CCA01610B941d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c7t5000CCA022016A2Dd0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c8t5000CCA022015B91d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"},
+          "c9t5000CCA022016FD9d0": {"Size in GB": 600, "PID": "HUC109060CSS600", "VID": "HITACHI"}
+        },
+        "Link Aggregations": {},
+        "Manufacturer": "Supermicro",
+        "MiB of Memory": "131043",
+        "Network Interfaces": {
+          "igb0": {"Link Status": "up", "NIC Names": ["admin"]},
+          "igb1": {"Link Status": "down", "NIC Names": []},
+          "igb2": {"Link Status": "down", "NIC Names": []},
+          "igb3": {"Link Status": "down", "NIC Names": []},
+          "ixgbe0": {"Link Status": "up", "NIC Names": ["external"]},
+          "ixgbe1": {"Link Status": "unknown", "NIC Names": []}
+        },
+        "Product": "X9DRD-7LN4F",
+        "Serial Number": "0123456789",
+        "Virtual Network Interfaces": {},
+        "VM Capable": true
+    }
+}
