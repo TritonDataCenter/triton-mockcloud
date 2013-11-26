@@ -67,6 +67,8 @@ netobj=$((sdc-napi /networks/${ADMIN_NET_UUID}/nics -X POST -d @/dev/stdin \
 EOF
 ))
 
+mock_oui=$(printf "02:%02x:%02x" $(($RANDOM % 256)) $(($RANDOM % 256)))
+
 echo "Creating VM..."
 vmadm create <<EOF
 {
@@ -77,6 +79,7 @@ vmadm create <<EOF
  "archive_on_delete": true,
  "alias": "${zone_alias}",
  "customer_metadata": {
+     "mock_oui": "${mock_oui}",
      "rabbitmq": "guest:guest:10.99.99.20:5672",
      "user-script": "#!/bin/bash\n\nset -o xtrace\nset -o errexit\n\nexec /opt/smartdc/mockcn/bin/init.sh\n\n# exec failed if we got this far.\nexit 2\n"
  },
