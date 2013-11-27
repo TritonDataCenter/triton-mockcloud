@@ -1,5 +1,5 @@
 {
-    "C2100": {
+    "PowerEdge C2100": {
         "CPU Physical Cores": 2,
         "CPU Total Cores": 16,
         "CPU Type": "Intel(R) Xeon(R) CPU E5530 @ 2.40GHz",
@@ -47,7 +47,7 @@
         "SKU Number": "To Be Filled By O.E.M.",
         "Virtual Network Interfaces": {},
         "VM Capable": true
-    }, "R610": {
+    }, "PowerEdge R610": {
         "CPU Physical Cores": 1,
         "CPU Total Cores": 12,
         "CPU Type": "Intel(R) Xeon(R) CPU E5645 @ 2.40GHz",

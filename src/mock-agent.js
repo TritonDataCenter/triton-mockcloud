@@ -156,7 +156,7 @@ function isUUID(str) {
 function parseBootParams(filename, callback) {
 
     // XXX we're assuming the first kernel line is the one we want
-    fs.readFile('menu.lst', function (err, data) {
+    fs.readFile('/tmp/menu.lst', function (err, data) {
         var found = false;
         var lines;
         var params = {}
@@ -191,10 +191,9 @@ function parseBootParams(filename, callback) {
                 opts.forEach(function (opt) {
                     var chunks = opt.split('=');
 
-                    params[chunks[0].replace('-', '_')]
-                        = chunks[1].replace('"', '');
+                    params[chunks[0].replace(/\-/g, '_').replace(/^,/, '')]
+                        = chunks[1].replace(/\"/g, '');
                 });
-                console.dir(params);
                 found = true;
                 return;
             }
@@ -205,13 +204,17 @@ function parseBootParams(filename, callback) {
 }
 
 function getBootParams(mac, tftphost, callback) {
-    var filename = 'menu.lst.01' + mac.replace(':', '').toUpperCase();
+    var args;
+    var cmd = '/opt/local/bin/tftp';
+    var filename = 'menu.lst.01' + mac.replace(/:/g, '').toUpperCase();
 
-    execFile('/opt/local/bin/tftp',
-        [tftphost, '-c', 'get ' + filename + ' /tmp/menu.lst'],
-        function (err, stdout, stderr) {
+    args = [tftphost, '-c', 'get', filename, '/tmp/menu.lst'];
 
+    log.debug('cmd: ' + cmd + ' ' + args.join(' '));
+
+    execFile(cmd, args, function (err, stdout, stderr) {
         if (err) {
+            err.stderr = stderr;
             callback(err);
             return;
         }
@@ -460,23 +463,91 @@ function applyDefaults(uuid, cnobj, callback) {
             });
         }, function (cb) {
             var canned_profile_names;
+            var disk_type = {};
             var profile;
+            var ssd_type = {};
             var template;
 
             canned_profile_names = Object.keys(canned_profiles);
-            profile = canned_profile_names[genRandomInt(0,
-                (canned_profile_names.length - 1))];
-            log.debug('chose profile ' + profile);
+
+            if (payload.hasOwnProperty('Product')
+                && canned_profile_names.indexOf(payload['Product']) !== -1) {
+
+                profile = payload['Product'];
+                log.debug('payload had "Product", using profile: ' + profile);
+            } else {
+                profile = canned_profile_names[genRandomInt(0,
+                    (canned_profile_names.length - 1))];
+                log.debug('chose random profile: ' + profile);
+            }
+
             template = canned_profiles[profile];
+
+            // If we have 'Disks' in payload, but not VID + PID, try to determine those
+            // from profile.
+            if (payload.hasOwnProperty('Disks')) {
+                Object.keys(template['Disks']).forEach(function (d) {
+                    d = template['Disks'][d];
+                    if (!ssd_type.hasOwnProperty('PID')
+                        && d.hasOwnProperty('SSD') && d['SSD']) {
+
+                        if (d.hasOwnProperty('PID')) {
+                            log.debug('default SSD PID="' + d['PID'] + '"');
+                            ssd_type['PID'] = d['PID'];
+                        }
+                        if (d.hasOwnProperty('VID')) {
+                            log.debug('default SSD VID="' + d['VID'] + '"');
+                            ssd_type['VID'] = d['VID'];
+                        }
+                    } else if (!disk_type.hasOwnProperty('PID')
+                        && ! d.hasOwnProperty('SSD')) {
+
+                        if (d.hasOwnProperty('PID')) {
+                            log.debug('default disk PID="' + d['PID'] + '"');
+                            disk_type['PID'] = d['PID'];
+                        }
+                        if (d.hasOwnProperty('VID')) {
+                            log.debug('default disk VID="' + d['VID'] + '"');
+                            disk_type['VID'] = d['VID'];
+                        }
+                    }
+                });
+
+                Object.keys(payload['Disks']).forEach(function (d) {
+                    d = payload['Disks'][d];
+                    if (d.hasOwnProperty('SSD') && d['SSD']) {
+                        if (!d.hasOwnProperty('PID')
+                            && ssd_type.hasOwnProperty('PID')) {
+
+                            d['PID'] = ssd_type['PID'];
+                        }
+                        if (!d.hasOwnProperty('VID')
+                            && ssd_type.hasOwnProperty('VID')) {
+
+                            d['VID'] = ssd_type['VID'];
+                        }
+                    } else {
+                        if (!d.hasOwnProperty('PID')
+                            && disk_type.hasOwnProperty('PID')) {
+
+                            d['PID'] = disk_type['PID'];
+                        }
+                        if (!d.hasOwnProperty('VID')
+                            && disk_type.hasOwnProperty('VID')) {
+
+                            d['VID'] = disk_type['VID'];
+                        }
+                    }
+                });
+            }
 
             Object.keys(template).forEach(function (key) {
                 if (!payload.hasOwnProperty(key)) {
                     payload[key] = template[key];
                     log.debug('loading ' + key + ' = ' + template[key]);
-                } else {
-                    log.debug('already have ' + key);
                 }
             });
+
             cb();
         }, function (cb) {
             var next_index = 0;
@@ -485,21 +556,21 @@ function applyDefaults(uuid, cnobj, callback) {
             // find index for this CN
             vms = Object.keys(state.cn_indexes);
             vms.forEach(function (v) {
-                if (v.cn_index >= next_index) {
-                    cn_index++;
+                if (state.cn_indexes[v].cn_index >= next_index) {
+                    next_index++;
                 }
             });
 
             cn_index = next_index;
+            // reserve the index so we don't reuse this index
+            state.cn_indexes[payload['UUID']] = {cn_index: cn_index};
             cb();
         }, function (cb) {
             /*
              * Load the mock_oui, this should be unique for each mockcn VM
              * The generated UUIDs for servers will be:
              *
-             *   mock_oui:<server_num>:<nic_num>
-             *
-             *
+             *   mock_oui:<cn_index (2 bytes)>:<nic_num (1 byte)>
              *
              */
             getMetadata('mock_oui', function (e, val) {

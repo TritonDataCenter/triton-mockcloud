@@ -88,6 +88,9 @@ pkg: all
 	cp src/zoneadm.sh $(MOCKCN_PKG_DIR)/bin/zoneadm
 	cp src/zoneevent.js $(MOCKCN_PKG_DIR)/bin/zoneevent
 	cp src/zpool.sh $(MOCKCN_PKG_DIR)/bin/zpool
+	# Cleanup up crap that we don't need in builds
+	rm -rf $(MOCKCN_PKG_DIR)/ur-agent/node_modules/amqp/test
+	rm -f $(MOCKCN_PKG_DIR)/ur-agent/node_modules/amqp/*.xml
 	# Clean up some dev / build bits
 	find $(PKG_DIR) -name "*.pyc" | xargs rm -f
 	find $(PKG_DIR) -name "*.o" | xargs rm -f
