@@ -153,6 +153,57 @@ function isUUID(str) {
     }
 }
 
+function parseBootParams(filename, callback) {
+
+    // XXX we're assuming the first kernel line is the one we want
+    fs.readFile('menu.lst', function (err, data) {
+        var found = false;
+        var lines;
+        var params = {}
+        var variables = {};
+
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        lines = data.toString().split(/\n/);
+        lines.forEach(function (line) {
+            var matches;
+            var opts;
+
+            if (found) {
+                return;
+            }
+
+            matches = line.match(/^variable (.*) (.*)/);
+            if (matches) {
+                variables[matches[1]] = matches[2];
+                return;
+            }
+            Object.keys(variables).forEach(function (key) {
+                var pattern = new RegExp('\\$\\{' + key + '\\}', 'g');
+                line = line.replace(pattern, variables[key]);
+            });
+            matches = line.match(/^\ *kernel.* ([^\ ]*)$/)
+            if (matches) {
+                opts = matches[1].match(/([^=]+="[^"]+"|[^=]+=[^,]+)/g);
+                opts.forEach(function (opt) {
+                    var chunks = opt.split('=');
+
+                    params[chunks[0].replace('-', '_')]
+                        = chunks[1].replace('"', '');
+                });
+                console.dir(params);
+                found = true;
+                return;
+            }
+        });
+
+        callback(null, params);
+    });
+}
+
 function getBootParams(mac, tftphost, callback) {
     var filename = 'menu.lst.01' + mac.replace(':', '').toUpperCase();
 
@@ -165,17 +216,7 @@ function getBootParams(mac, tftphost, callback) {
             return;
         }
 
-        fs.readFile('/tmp/menu.lst', function (error, data) {
-            if (error) {
-                callback(error);
-            }
-
-            data.split(/\n/).forEach(function (line) {
-                log.debug('tftp line: ' + line);
-            });
-
-            callback(null, {});
-        });
+        parseBootParams('/tmp/menu.lst', callback);
     });
 }
 
@@ -504,20 +545,28 @@ function applyDefaults(uuid, cnobj, callback) {
                 return;
             });
         }, function (cb) {
+            getBootParams(admin_nic['MAC Address'], tftpdhost, function (err, params) {
+                if (!err) {
+                    log.debug('got boot params: ' + JSON.stringify(params, null, 2));
+                    payload['Boot Parameters'] = params;
+                }
+                cb(err);
+            });
+        }, function (cb) {
             if (payload.hasOwnProperty('Hostname')) {
+                cb();
+                return;
+            }
+
+            // boot params takes priority
+            if (payload['Boot Parameters'].hasOwnProperty('hostname')) {
+                payload['Hostname'] = payload['Boot Parameters']['hostname'];
                 cb();
                 return;
             }
 
             payload['Hostname'] = admin_nic['MAC Address'].replace(/:/g, '-');
             cb();
-        }, function (cb) {
-            getBootParams(admin_nic['MAC Address'], tftpdhost, function (err, params) {
-                if (!err) {
-                    log.debug('boot params: ' + JSON.stringify(params, null, 2));
-                }
-                cb(err);
-            });
         }
 
         // XXX TODO: randomize disk names (eg. c0t37E44117BC62A1E3d0)
