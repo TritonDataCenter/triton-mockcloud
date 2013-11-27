@@ -153,6 +153,32 @@ function isUUID(str) {
     }
 }
 
+function getBootParams(mac, tftphost, callback) {
+    var filename = 'menu.lst.01' + mac.replace(':', '').toUpperCase();
+
+    execFile('/opt/local/bin/tftp',
+        [tftphost, '-c', 'get ' + filename + ' /tmp/menu.lst'],
+        function (err, stdout, stderr) {
+
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        fs.readFile('/tmp/menu.lst', function (error, data) {
+            if (error) {
+                callback(error);
+            }
+
+            data.split(/\n/).forEach(function (line) {
+                log.debug('tftp line: ' + line);
+            });
+
+            callback(null, {});
+        });
+    });
+}
+
 function monitorMockCNs() {
 
     function refreshMockCNs () {
@@ -344,6 +370,7 @@ function applyDefaults(uuid, cnobj, callback) {
     var cn_index;
     var mock_oui;
     var payload = cnobj;
+    var tftpdhost;
 
     if (!payload.hasOwnProperty('UUID')) {
         payload.UUID = uuid;
@@ -471,6 +498,7 @@ function applyDefaults(uuid, cnobj, callback) {
                 }
 
                 admin_nic['ip4addr'] = result.ip;
+                tftpdhost = result.server;
 
                 cb();
                 return;
@@ -483,7 +511,15 @@ function applyDefaults(uuid, cnobj, callback) {
 
             payload['Hostname'] = admin_nic['MAC Address'].replace(/:/g, '-');
             cb();
+        }, function (cb) {
+            getBootParams(admin_nic['MAC Address'], tftpdhost, function (err, params) {
+                if (!err) {
+                    log.debug('boot params: ' + JSON.stringify(params, null, 2));
+                }
+                cb(err);
+            });
         }
+
         // XXX TODO: randomize disk names (eg. c0t37E44117BC62A1E3d0)
     ], function (err) {
         if (err) {

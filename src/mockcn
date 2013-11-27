@@ -25,13 +25,16 @@ if [[ -n $(vmadm lookup -1 alias="${zone_alias}") ]]; then
     exit 1
 fi
 
-OWNER_UUID=$(grep "^ufds_admin_uuid" /usbkey/config | cut -d'=' -f2)
+. /lib/sdc/config.sh
+load_sdc_config
+
+OWNER_UUID=${CONFIG_ufds_admin_uuid}
 if [[ -z ${OWNER_UUID} ]]; then
     echo "Cannot find OWNER_UUID" >&2
     exit 1
 fi
 
-RABBITMQ_INFO=$(grep "^rabbitmq=" /usbkey/config | cut -d'=' -f2)
+RABBITMQ_INFO=${CONFIG_rabbitmq}
 if [[ -z ${RABBITMQ_INFO} ]]; then
     echo "Cannot find RABBITMQ_INFO" >&2
     exit 1
