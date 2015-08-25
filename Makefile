@@ -60,11 +60,12 @@ test:
 pkg: all
 	rm -rf $(PKG_DIR)
 	mkdir -p $(MOCKCLOUD_PKG_DIR)
+	mkdir -p $(MOCKCLOUD_PKG_DIR)/node_modules
 	cp package.json $(MOCKCLOUD_PKG_DIR)/
+	(cd $(MOCKCLOUD_PKG_DIR) && npm install)
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/ur-agent
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/bin
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/lib
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/node_modules
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/provisioner-tasks
 	cp -PR smf \
 		$(MOCKCLOUD_PKG_DIR)
