@@ -1,2 +1,6 @@
 build/
 mockcn-*.bz2
+node_modules/.bin
+node_modules/restify
+node_modules/vasync
+npm-debug.log
