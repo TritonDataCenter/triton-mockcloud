@@ -63,18 +63,11 @@ pkg: all
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/node_modules
 	cp package.json $(MOCKCLOUD_PKG_DIR)/
 	(cd $(MOCKCLOUD_PKG_DIR) && npm install)
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/ur-agent
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/bin
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/lib
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/provisioner-tasks
 	cp -PR smf \
 		$(MOCKCLOUD_PKG_DIR)
-	cp ur-agent/ur-agent ur-agent/amqp-plus.js \
-		$(MOCKCLOUD_PKG_DIR)/ur-agent
-	cp -PR ur-agent/node_modules \
-		$(MOCKCLOUD_PKG_DIR)/ur-agent
-	cp -PR ur-modules/* \
-		$(MOCKCLOUD_PKG_DIR)/ur-agent/node_modules
 	cp src/amqp-config.js $(MOCKCLOUD_PKG_DIR)/bin/amqp-config
 	cp src/disklayout.js $(MOCKCLOUD_PKG_DIR)/bin/disklayout
 	cp src/diskjson.js $(MOCKCLOUD_PKG_DIR)/bin/diskjson
@@ -90,9 +83,6 @@ pkg: all
 	cp src/zoneadm.sh $(MOCKCLOUD_PKG_DIR)/bin/zoneadm
 	cp src/zoneevent.js $(MOCKCLOUD_PKG_DIR)/bin/zoneevent
 	cp src/zpool.sh $(MOCKCLOUD_PKG_DIR)/bin/zpool
-	# Cleanup up crap that we don't need in builds
-	rm -rf $(MOCKCLOUD_PKG_DIR)/ur-agent/node_modules/amqp/test
-	rm -f $(MOCKCLOUD_PKG_DIR)/ur-agent/node_modules/amqp/*.xml
 	# Clean up some dev / build bits
 	find $(PKG_DIR) -name "*.pyc" | xargs rm -f
 	find $(PKG_DIR) -name "*.o" | xargs rm -f
