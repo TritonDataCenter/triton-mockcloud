@@ -1,3 +1,0 @@
-[submodule "ur-agent"]
-	path = ur-agent
-	url = http://github.com/joyent/sdc-ur-agent.git

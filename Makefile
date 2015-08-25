@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, Joyent, Inc. All rights reserved.
+# Copyright (c) 2013-2015, Joyent, Inc. All rights reserved.
 #
 
 NAME=mockcloud
@@ -78,7 +78,6 @@ pkg: all
 	cp src/amqp-config.js $(MOCKCLOUD_PKG_DIR)/bin/amqp-config
 	cp src/disklayout.js $(MOCKCLOUD_PKG_DIR)/bin/disklayout
 	cp src/diskjson.js $(MOCKCLOUD_PKG_DIR)/bin/diskjson
-	cp src/heartbeater.js $(MOCKCLOUD_PKG_DIR)/bin/heartbeater.js
 	cp src/fix-agents.sh $(MOCKCLOUD_PKG_DIR)/bin/fix-agents.sh
 	cp src/init.sh $(MOCKCLOUD_PKG_DIR)/bin/
 	cp src/mock-agent.js $(MOCKCLOUD_PKG_DIR)/bin/mock-agent

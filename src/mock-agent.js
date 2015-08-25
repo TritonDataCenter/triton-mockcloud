@@ -11,7 +11,7 @@ var http = require('http');
 var path = require('path');
 var sprintf = require('/usr/node/node_modules/sprintf').sprintf;
 var sys = require('sys');
-var UrAgent = require('../ur-agent/ur-agent').UrAgent;
+var UrAgent = require('ur-agent/ur-agent').UrAgent;
 
 var log = bunyan.createLogger({name: 'mock-ur-agent', level: 'debug'});
 var mockCNs = {};
