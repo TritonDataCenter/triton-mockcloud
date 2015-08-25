@@ -59,6 +59,7 @@ test:
 .PHONY: pkg
 pkg: all
 	rm -rf $(PKG_DIR)
+	cp package.json $(MOCKCLOUD_PKG_DIR)/
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/ur-agent
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/bin
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/lib
