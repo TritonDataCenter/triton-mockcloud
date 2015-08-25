@@ -10,7 +10,8 @@ var path = require('path');
 var restify = require('restify');
 var sprintf = require('sprintf').sprintf;
 var sys = require('sys');
-var UrAgent = require('ur-agent/ur-agent').UrAgent;
+var UrAgent = require('sdc-ur-agent').UrAgent;
+var uuid = require('node-uuid');
 var vasync = require('vasync');
 
 var log = bunyan.createLogger({name: 'mock-ur-agent', level: 'debug'});
@@ -302,8 +303,9 @@ function returnError(code, request, res) {
     res.end();
 }
 
-function validateServer(uuid) {
+function validateServer(payload) {
     var invalid = false;
+    var uuid = payload.UUID;
     var validated = {};
 
     Object.keys(payload).forEach(function (key) {
@@ -408,7 +410,6 @@ function applyDefaults(payload, callback) {
     var admin_nic;
     var cn_index;
     var mock_oui;
-    var payload = cnobj;
     var tftpdhost;
 
     if (!payload.hasOwnProperty('Boot Time')) {
@@ -437,7 +438,7 @@ function applyDefaults(payload, callback) {
         });
     }
 
-    async.series([
+    vasync.waterfall([
         function (cb) {
             addFromMetadata('Datacenter Name', 'sdc:datacenter_name', cb);
         }, function (cb) {
@@ -542,11 +543,11 @@ function applyDefaults(payload, callback) {
             cb();
         }, function (cb) {
             var next_index = 0;
-            var vms;
+            var cns;
 
             // find index for this CN
-            vms = Object.keys(state.cn_indexes);
-            vms.forEach(function (v) {
+            cns = Object.keys(state.cn_indexes);
+            cns.forEach(function (v) {
                 if (state.cn_indexes[v].cn_index >= next_index) {
                     next_index++;
                 }
@@ -576,16 +577,19 @@ function applyDefaults(payload, callback) {
 
             nics = Object.keys(payload['Network Interfaces']);
 
-            async.forEach(nics, function (n, c) {
-                var nic = payload['Network Interfaces'][n];
-                addMAC(nic, mock_oui, cn_index, nic_index++, c);
-                if (nic.hasOwnProperty('NIC Names')
-                    && nic['NIC Names'].indexOf('admin') !== -1) {
+            vasync.forEachPipeline({
+                inputs: nics,
+                func: function (n, c) {
+                    var nic = payload['Network Interfaces'][n];
+                    addMAC(nic, mock_oui, cn_index, nic_index++, c);
+                    if (nic.hasOwnProperty('NIC Names')
+                        && nic['NIC Names'].indexOf('admin') !== -1) {
 
-                    admin_nic = nic;
-                } else if (nic_index === 1 && !admin_nic) {
-                    // default to first one in case we don't have specified one
-                    admin_nic = nic;
+                        admin_nic = nic;
+                    } else if (nic_index === 1 && !admin_nic) {
+                        // default to first one in case we don't have specified one
+                        admin_nic = nic;
+                    }
                 }
             }, function (e) {
                 cb(e);
@@ -647,7 +651,7 @@ function createMockServer(payload, callback) {
 
     log.debug({payload: payload}, 'creating ' + uuid);
 
-    vasync.series([
+    vasync.waterfall([
         function (cb) {
             validated = validateServer(payload);
             if (!validated) {
@@ -775,12 +779,10 @@ function deleteServer(req, res, next) {
 function createServer(req, res, next) {
     var payload = req.body;
 
-    // XXX validate payload.UUID, or perhaps create one?
-    log.error({payload: payload}, 'PAYLOAD');
+    log.info({payload: payload, params: req.params}, 'PAYLOAD');
 
     if (!payload.UUID) {
-        next(restify.BadRequestError('missing uuid'));
-        return;
+        payload.UUID = uuid.v4();
     }
     if (mockCNs[payload.UUID]) {
         next(restify.ConflictError('CN already exists'));
@@ -798,25 +800,31 @@ function createServer(req, res, next) {
     });
 }
 
-/* XXX this should change to just a startup load */
-monitorMockCNs();
+loadState(function (e) {
+    if (e) {
+        throw (e);
+    }
 
-function respond(req, res, next) {
-  res.send('hello ' + req.params.name);
-  next();
-}
+    /* XXX this should change to just a startup load */
+    monitorMockCNs();
 
-server = restify.createServer();
-server.use(restify.queryParser());
-server.use(restify.bodyParser());
-server.on('after', restify.auditLogger({ log: log }));
+    function respond(req, res, next) {
+      res.send('hello ' + req.params.name);
+      next();
+    }
 
-server.get('/servers', getServers);
-server.get('/servers/:uuid', getServer);
-server.post('/servers', createServer);
-server.del('/servers/:uuid', deleteServer);
+    server = restify.createServer();
+    server.use(restify.queryParser());
+    server.use(restify.bodyParser());
+    server.on('after', restify.auditLogger({ log: log }));
 
-server.listen(HTTP_LISTEN_PORT, HTTP_LISTEN_IP, function() {
-  console.log('%s listening at %s', server.name, server.url);
+    server.get('/servers', getServers);
+    server.get('/servers/:uuid', getServer);
+    server.post('/servers', createServer);
+    server.del('/servers/:uuid', deleteServer);
+
+    server.listen(HTTP_LISTEN_PORT, HTTP_LISTEN_IP, function() {
+        console.log('%s listening at %s', server.name, server.url);
+    });
 });
 
