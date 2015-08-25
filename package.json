@@ -5,6 +5,8 @@
   "author": "Joyent (joyent.com)",
   "private": true,
   "dependencies": {
+    "bunyan": "1.4.0",
+    "node-uuid": "1.4.3",
     "restify": "4.0.0",
     "ur-agent": "git+https://github.com/joyent/sdc-ur-agent.git#9ed6909d6db4ab069974e746abaf820cc2c6fe7e",
     "vasync": "1.6.3"

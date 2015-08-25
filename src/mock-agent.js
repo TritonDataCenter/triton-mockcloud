@@ -1,17 +1,17 @@
 #!/usr/node/bin/node
 //--abort_on_uncaught_exception
 
-var async = require('/usr/node/node_modules/async');
-var bunyan = require('/usr/node/node_modules/bunyan');
+var bunyan = require('bunyan');
 var canned_profiles = require('../lib/canned_profiles.json');
 var dhcpclient = require('dhcpclient');
 var execFile = require('child_process').execFile;
 var fs = require('fs');
-var http = require('http');
 var path = require('path');
-var sprintf = require('/usr/node/node_modules/sprintf').sprintf;
+var restify = require('restify');
+var sprintf = require('sprintf').sprintf;
 var sys = require('sys');
 var UrAgent = require('ur-agent/ur-agent').UrAgent;
+var vasync = require('vasync');
 
 var log = bunyan.createLogger({name: 'mock-ur-agent', level: 'debug'});
 var mockCNs = {};
@@ -302,14 +302,14 @@ function returnError(code, request, res) {
     res.end();
 }
 
-function validateServer(uuid, cnobj) {
+function validateServer(uuid) {
     var invalid = false;
     var validated = {};
 
-    Object.keys(cnobj).forEach(function (key) {
+    Object.keys(payload).forEach(function (key) {
         if (CN_PROPERTIES.hasOwnProperty(key)) {
-            if (CN_PROPERTIES[key].validator(cnobj[key])) {
-                validated[key] = cnobj[key];
+            if (CN_PROPERTIES[key].validator(payload[key])) {
+                validated[key] = payload[key];
             } else {
                 invalid = true;
             }
@@ -318,15 +318,10 @@ function validateServer(uuid, cnobj) {
         }
     });
 
-    if (cnobj.hasOwnProperty('UUID') && cnobj.UUID !== uuid) {
-        log.error('UUID in payload (' + cnobj.UUID + ') does not match target ('
-            + uuid + ')');
-        return false;
-    }
-
     if (invalid) {
         return false;
     }
+
     return validated;
 }
 
@@ -409,16 +404,12 @@ function addMAC(nic, mock_oui, cn_index, nic_index, callback) {
     callback();
 }
 
-function applyDefaults(uuid, cnobj, callback) {
+function applyDefaults(payload, callback) {
     var admin_nic;
     var cn_index;
     var mock_oui;
     var payload = cnobj;
     var tftpdhost;
-
-    if (!payload.hasOwnProperty('UUID')) {
-        payload.UUID = uuid;
-    }
 
     if (!payload.hasOwnProperty('Boot Time')) {
         payload['Boot Time'] = genBootTime();
@@ -649,32 +640,32 @@ function applyDefaults(uuid, cnobj, callback) {
     });
 }
 
-function createServer(uuid, cnobj, res) {
-    var payload;
+function createMockServer(payload, callback) {
+    var server;
+    var uuid = payload.UUID;
     var validated;
 
-    log.debug({cnobj: cnobj}, 'creating ' + uuid + ' original payload');
+    log.debug({payload: payload}, 'creating ' + uuid);
 
-    async.series([
+    vasync.series([
         function (cb) {
-            validated = validateServer(uuid, cnobj);
+            validated = validateServer(payload);
             if (!validated) {
-                returnError(400, {}, res);
-                cb(new Error('Validation failed'));
+                cb(restify.BadRequestError('invalid payload'));
                 return;
             }
-            log.debug({cnobj: validated}, 'validated payload');
+            log.debug({payload: validated}, 'validated payload');
             cb();
         }, function (cb) {
-            applyDefaults(uuid, validated, function (err, data) {
+            applyDefaults(payload, function (err, data) {
                 if (!err) {
-                    payload = data;
-                    log.debug({cnobj: payload}, 'after applying defaults');
+                    server = data;
+                    log.debug({payload: server}, 'after applying defaults');
                 }
                 cb(err);
             });
         }, function (cb) {
-            var uuid = payload['UUID'];
+            var uuid = server.UUID;
 
             // make directory
             fs.mkdir('/mockcn', 0755, function (e) {
@@ -695,28 +686,28 @@ function createServer(uuid, cnobj, res) {
             });
         }, function (cb) {
             var disks = [];
-            var uuid = payload['UUID'];
+            var uuid = server.UUID;
 
             // write disks
-            Object.keys(payload['Disks']).forEach(function (d) {
-                var size = payload['Disks'][d]['Size in GB'];
+            Object.keys(server.Disks).forEach(function (d) {
+                var size = server.Disks[d]['Size in GB'];
 
                 size = (size * 1000 * 1000 * 1000);
                 disks.push({
                     type: 'SCSI',
                     name: d,
-                    vid: payload['Disks'][d]['VID'] ? payload['Disks'][d]['VID'] : 'HITACHI',
-                    pid: payload['Disks'][d]['PID'] ? payload['Disks'][d]['PID'] : 'HUC109060CSS600',
+                    vid: server['Disks'][d]['VID'] ? server['Disks'][d]['VID'] : 'HITACHI',
+                    pid: server['Disks'][d]['PID'] ? server['Disks'][d]['PID'] : 'HUC109060CSS600',
                     size: size,
                     removable: false,
-                    solid_state: payload['Disks'][d]['SSD'] ? true : false
+                    solid_state: server['Disks'][d]['SSD'] ? true : false
                 });
 
                 // Some properties only exist until we've written out the
                 // disks.json and don't go to sysinfo, we remove those now
-                delete payload['Disks'][d]['VID'];
-                delete payload['Disks'][d]['PID'];
-                delete payload['Disks'][d]['SSD'];
+                delete server['Disks'][d]['VID'];
+                delete server['Disks'][d]['PID'];
+                delete server['Disks'][d]['SSD'];
             });
 
             fs.writeFile('/mockcn/' + uuid + '/disks.json',
@@ -727,7 +718,7 @@ function createServer(uuid, cnobj, res) {
         }, function (cb) {
             // write sysinfo
             fs.writeFile('/mockcn/' + uuid + '/sysinfo.json',
-                JSON.stringify(payload, null, 2) + '\n', function (err) {
+                JSON.stringify(server, null, 2) + '\n', function (err) {
 
                 cb(err);
             });
@@ -747,140 +738,85 @@ function createServer(uuid, cnobj, res) {
 
             cb();
         }
-    ], function (err) {
+    ], callback);
+}
+
+function getServers(req, res, next) {
+    res.send(mockCNs);
+    next();
+}
+
+function getServer(req, res, next) {
+    var uuid = req.params.uuid;
+
+    if (!uuid || !mockCNs[uuid]) {
+        next(restify.ResourceNotFoundError('no such server'));
+        return;
+    }
+
+    res.send(mockCNs[uuid]);
+    next();
+}
+
+function deleteServer(req, res, next) {
+    var uuid = req.params.uuid;
+
+    if (!uuid || !mockCNs[uuid]) {
+        next(restify.ResourceNotFoundError('no such server'));
+        return;
+    }
+
+    // XXX need to actually delete
+
+    res.send(204);
+    next();
+}
+
+function createServer(req, res, next) {
+    var payload = req.body;
+
+    // XXX validate payload.UUID, or perhaps create one?
+    log.error({payload: payload}, 'PAYLOAD');
+
+    if (!payload.UUID) {
+        next(restify.BadRequestError('missing uuid'));
+        return;
+    }
+    if (mockCNs[payload.UUID]) {
+        next(restify.ConflictError('CN already exists'));
+        return;
+    }
+
+    createMockServer(payload, function (err) {
         if (err) {
-            returnError(500, {}, res);
-            return;
-        }
-        res.writeHead(201, {
-            'Content-Type': 'application/json'
-        });
-        res.end(JSON.stringify(payload) + '\n');
-    });
-}
-
-function dumpServers(res) {
-    res.writeHead(200, {
-        'Content-Type': 'application/json'
-    });
-    res.end(JSON.stringify([]) + '\n');
-}
-
-function dumpServer(uuid, res) {
-    res.writeHead(200, {
-        'Content-Type': 'application/json'
-    });
-    res.end(JSON.stringify({uuid: uuid}) + '\n');
-}
-
-function deleteServer(uuid, res) {
-    log.debug('deleting ' + uuid);
-    res.writeHead(200, {
-        'Content-Type': 'application/json'
-    });
-    res.end();
-}
-
-/*
- * valid HTTP endpoints:
- *
- * GET /servers
- * GET /servers/:uuid
- * POST /servers/:uuid
- * DELETE /servers/:uuid
- *
- */
-function handleHTTPRequest(request, res) {
-    var urlParts;
-    var target;
-
-    if (request.headers.hasOwnProperty('content-type')
-        && request.headers['content-type'] !== 'application/json') {
-
-        returnError(400, request, res);
-        return;
-    }
-
-    target = getTarget(request.url);
-    log.info({
-        method: request.method,
-        target: request.url,
-        remote: request.connection.remoteAddress
-     }, 'handling request');
-
-    if (target === null) {
-        returnError(404, request, res);
-        return;
-    }
-
-    if (request.method === 'GET') {
-        if (target === 'all') {
-            dumpServers(res);
-            return;
-        } else {
-            dumpServer(target, res);
-            return;
-        }
-    } else if (request.method === 'POST') {
-        var data = '';
-
-        if (target === 'all') {
-            returnError(404, request, res);
+            next(err);
             return;
         }
 
-        request.on('data', function(chunk) {
-            data += chunk;
-        });
-
-        request.on('end', function() {
-            var cnobj;
-
-            loadState(function (e) {
-                if (e) {
-                    returnError(500, request, res);
-                    return;
-                }
-                if (data.length == 0) {
-                    createServer(target, {}, res);
-                } else {
-                    try {
-                        cnobj = JSON.parse(data);
-                    } catch (e) {
-                        log.error({err: e}, 'failed to parse POST input');
-                        returnError(400, request, res);
-                        return;
-                    }
-                    createServer(target, cnobj, res);
-                }
-            });
-        });
-        return;
-    } else if (request.method === 'DELETE') {
-        if (target === 'all') {
-            returnError(404, request, res);
-            return;
-        }
-        loadState(function (e) {
-            if (e) {
-                returnError(500, request, res);
-                return;
-            }
-            deleteServer(target, res);
-            return;
-        });
-    } else {
-        returnError(404, request, res);
-        return;
-    }
+        res.send(201);
+        next();
+    });
 }
 
 /* XXX this should change to just a startup load */
 monitorMockCNs();
 
-/* start HTTP server for controlling mock CN instances */
-server = http.createServer(handleHTTPRequest);
-server.listen(HTTP_LISTEN_PORT, HTTP_LISTEN_IP);
-log.info('Server running at http://' + HTTP_LISTEN_IP + ':'
-    + HTTP_LISTEN_PORT + '/');
+function respond(req, res, next) {
+  res.send('hello ' + req.params.name);
+  next();
+}
+
+server = restify.createServer();
+server.use(restify.queryParser());
+server.use(restify.bodyParser());
+server.on('after', restify.auditLogger({ log: log }));
+
+server.get('/servers', getServers);
+server.get('/servers/:uuid', getServer);
+server.post('/servers', createServer);
+server.del('/servers/:uuid', deleteServer);
+
+server.listen(HTTP_LISTEN_PORT, HTTP_LISTEN_IP, function() {
+  console.log('%s listening at %s', server.name, server.url);
+});
 

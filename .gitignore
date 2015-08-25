@@ -1,6 +1,8 @@
 build/
 mockcn-*.bz2
 node_modules/.bin
+node_modules/bunyan
+node_modules/node-uuid
 node_modules/restify
 node_modules/ur-agent
 node_modules/vasync
