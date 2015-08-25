@@ -2,7 +2,7 @@
 # Copyright (c) 2013, Joyent, Inc. All rights reserved.
 #
 
-NAME=mockcn
+NAME=mockcloud
 
 #
 # Directories
@@ -17,7 +17,7 @@ TOP := $(shell pwd)
 #JSL_FILES_NODE   = $(JS_FILES)
 #JSSTYLE_FILES	 = $(JS_FILES)
 PKG_DIR = $(BUILD)/pkg
-MOCKCN_PKG_DIR = $(PKG_DIR)/root/opt/smartdc/mockcn
+MOCKCLOUD_PKG_DIR = $(PKG_DIR)/root/opt/smartdc/mockcloud
 RELEASE_TARBALL=$(NAME)-pkg-$(STAMP).tar.bz2
 CLEAN_FILES += ./node_modules build/pkg $(NAME)-pkg-*.tar.bz2
 REPO_MODULES := src/node-pack
@@ -59,38 +59,38 @@ test:
 .PHONY: pkg
 pkg: all
 	rm -rf $(PKG_DIR)
-	mkdir -p $(MOCKCN_PKG_DIR)/ur-agent
-	mkdir -p $(MOCKCN_PKG_DIR)/bin
-	mkdir -p $(MOCKCN_PKG_DIR)/lib
-	mkdir -p $(MOCKCN_PKG_DIR)/node_modules
-	mkdir -p $(MOCKCN_PKG_DIR)/provisioner-tasks
+	mkdir -p $(MOCKCLOUD_PKG_DIR)/ur-agent
+	mkdir -p $(MOCKCLOUD_PKG_DIR)/bin
+	mkdir -p $(MOCKCLOUD_PKG_DIR)/lib
+	mkdir -p $(MOCKCLOUD_PKG_DIR)/node_modules
+	mkdir -p $(MOCKCLOUD_PKG_DIR)/provisioner-tasks
 	cp -PR smf \
-		$(MOCKCN_PKG_DIR)
+		$(MOCKCLOUD_PKG_DIR)
 	cp ur-agent/ur-agent ur-agent/amqp-plus.js \
-		$(MOCKCN_PKG_DIR)/ur-agent
+		$(MOCKCLOUD_PKG_DIR)/ur-agent
 	cp -PR ur-agent/node_modules \
-		$(MOCKCN_PKG_DIR)/ur-agent
+		$(MOCKCLOUD_PKG_DIR)/ur-agent
 	cp -PR ur-modules/* \
-		$(MOCKCN_PKG_DIR)/ur-agent/node_modules
-	cp src/amqp-config.js $(MOCKCN_PKG_DIR)/bin/amqp-config
-	cp src/disklayout.js $(MOCKCN_PKG_DIR)/bin/disklayout
-	cp src/diskjson.js $(MOCKCN_PKG_DIR)/bin/diskjson
-	cp src/heartbeater.js $(MOCKCN_PKG_DIR)/bin/heartbeater.js
-	cp src/fix-agents.sh $(MOCKCN_PKG_DIR)/bin/fix-agents.sh
-	cp src/init.sh $(MOCKCN_PKG_DIR)/bin/
-	cp src/mock-agent.js $(MOCKCN_PKG_DIR)/bin/mock-agent
-	cp lib/*.json $(MOCKCN_PKG_DIR)/lib/
+		$(MOCKCLOUD_PKG_DIR)/ur-agent/node_modules
+	cp src/amqp-config.js $(MOCKCLOUD_PKG_DIR)/bin/amqp-config
+	cp src/disklayout.js $(MOCKCLOUD_PKG_DIR)/bin/disklayout
+	cp src/diskjson.js $(MOCKCLOUD_PKG_DIR)/bin/diskjson
+	cp src/heartbeater.js $(MOCKCLOUD_PKG_DIR)/bin/heartbeater.js
+	cp src/fix-agents.sh $(MOCKCLOUD_PKG_DIR)/bin/fix-agents.sh
+	cp src/init.sh $(MOCKCLOUD_PKG_DIR)/bin/
+	cp src/mock-agent.js $(MOCKCLOUD_PKG_DIR)/bin/mock-agent
+	cp lib/*.json $(MOCKCLOUD_PKG_DIR)/lib/
 	[[ -d provisioner-tasks ]] \
-		&& cp provisioner-tasks/* $(MOCKCN_PKG_DIR)/provisioner-tasks/ || /bin/true
-	cp src/sysinfo.js $(MOCKCN_PKG_DIR)/bin/sysinfo
-	cp -PR node_modules/* $(MOCKCN_PKG_DIR)/node_modules/
-	cp src/zfs.sh $(MOCKCN_PKG_DIR)/bin/zfs
-	cp src/zoneadm.sh $(MOCKCN_PKG_DIR)/bin/zoneadm
-	cp src/zoneevent.js $(MOCKCN_PKG_DIR)/bin/zoneevent
-	cp src/zpool.sh $(MOCKCN_PKG_DIR)/bin/zpool
+		&& cp provisioner-tasks/* $(MOCKCLOUD_PKG_DIR)/provisioner-tasks/ || /bin/true
+	cp src/sysinfo.js $(MOCKCLOUD_PKG_DIR)/bin/sysinfo
+	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
+	cp src/zfs.sh $(MOCKCLOUD_PKG_DIR)/bin/zfs
+	cp src/zoneadm.sh $(MOCKCLOUD_PKG_DIR)/bin/zoneadm
+	cp src/zoneevent.js $(MOCKCLOUD_PKG_DIR)/bin/zoneevent
+	cp src/zpool.sh $(MOCKCLOUD_PKG_DIR)/bin/zpool
 	# Cleanup up crap that we don't need in builds
-	rm -rf $(MOCKCN_PKG_DIR)/ur-agent/node_modules/amqp/test
-	rm -f $(MOCKCN_PKG_DIR)/ur-agent/node_modules/amqp/*.xml
+	rm -rf $(MOCKCLOUD_PKG_DIR)/ur-agent/node_modules/amqp/test
+	rm -f $(MOCKCLOUD_PKG_DIR)/ur-agent/node_modules/amqp/*.xml
 	# Clean up some dev / build bits
 	find $(PKG_DIR) -name "*.pyc" | xargs rm -f
 	find $(PKG_DIR) -name "*.o" | xargs rm -f

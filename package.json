@@ -1,6 +1,6 @@
 {
-  "name": "mockcn",
-  "description": "Mock CN",
+  "name": "mockcloud",
+  "description": "Mock Cloud",
   "version": "0.2.71",
   "author": "Joyent (joyent.com)",
   "private": true,

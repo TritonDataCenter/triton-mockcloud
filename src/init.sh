@@ -4,20 +4,20 @@ set -o errexit
 set -o xtrace
 
 # replace sysinfo with our version
-mount -F lofs /opt/smartdc/mockcn/bin/sysinfo /usr/bin/sysinfo
+mount -F lofs /opt/smartdc/mockcloud/bin/sysinfo /usr/bin/sysinfo
 
 # create disks.json from sysinfo, used by disklayout when doing setup
 #(
     #for uuid in $(ls -1 /mockcn); do
-        #MOCKCN_SERVER_UUID=${uuid} /opt/smartdc/mockcn/bin/diskjson \
+        #MOCKCN_SERVER_UUID=${uuid} /opt/smartdc/mockcloud/bin/diskjson \
             #> /mockcn/${uuid}/disks.json
     #done
 #)
 
 # make config.sh read config from correct place
-mkdir -p /opt/smartdc/mockcn/tmp
-cp /lib/sdc/config.sh /opt/smartdc/mockcn/tmp/config.sh
-/opt/local/bin/patch /opt/smartdc/mockcn/tmp/config.sh <<"EOF"
+mkdir -p /opt/smartdc/mockcloud/tmp
+cp /lib/sdc/config.sh /opt/smartdc/mockcloud/tmp/config.sh
+/opt/local/bin/patch /opt/smartdc/mockcloud/tmp/config.sh <<"EOF"
 --- /lib/sdc/config.sh  2013-11-10 07:48:35.629886000 +0000
 +++ config.sh   2013-11-13 21:41:04.651518490 +0000
 @@ -26,6 +26,9 @@
@@ -44,23 +44,23 @@ cp /lib/sdc/config.sh /opt/smartdc/mockcn/tmp/config.sh
          # no cache file, need update
 
 EOF
-mount -F lofs /opt/smartdc/mockcn/tmp/config.sh /lib/sdc/config.sh
+mount -F lofs /opt/smartdc/mockcloud/tmp/config.sh /lib/sdc/config.sh
 
 # replace disklayout with our version
-mount -F lofs /opt/smartdc/mockcn/bin/disklayout /usr/bin/disklayout
+mount -F lofs /opt/smartdc/mockcloud/bin/disklayout /usr/bin/disklayout
 
 # replace zoneevent
-mount -F lofs /opt/smartdc/mockcn/bin/zoneevent /usr/vm/sbin/zoneevent
+mount -F lofs /opt/smartdc/mockcloud/bin/zoneevent /usr/vm/sbin/zoneevent
 
 # replace z* tools with our versions
-mount -F lofs /opt/smartdc/mockcn/bin/zoneadm /usr/sbin/zoneadm
-mount -F lofs /opt/smartdc/mockcn/bin/zfs /usr/sbin/zfs
-mount -F lofs /opt/smartdc/mockcn/bin/zpool /usr/sbin/zpool
+mount -F lofs /opt/smartdc/mockcloud/bin/zoneadm /usr/sbin/zoneadm
+mount -F lofs /opt/smartdc/mockcloud/bin/zfs /usr/sbin/zfs
+mount -F lofs /opt/smartdc/mockcloud/bin/zpool /usr/sbin/zpool
 
 # replace system.js so we load faked up memory info in heartbeater
-mount -F lofs /opt/smartdc/mockcn/node_modules/system.js /usr/node/node_modules/system.js
+mount -F lofs /opt/smartdc/mockcloud/node_modules/system.js /usr/node/node_modules/system.js
 
 # start mock-agent
-svccfg import /opt/smartdc/mockcn/smf/mock-agent.xml
+svccfg import /opt/smartdc/mockcloud/smf/mock-agent.xml
 
 exit 0

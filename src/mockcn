@@ -2,7 +2,7 @@
 #
 # This script exists to create a VM to host mock CNs. Usage is:
 #
-# ./mockcn <alias>
+# ./mockcloud <alias>
 #
 # Where alias will be the alias of the new zone. If a VM already exists with
 # the chosen alias, the script will abort.
@@ -44,8 +44,8 @@ fi
 imgadm sources -a https://updates.joyent.com/
 
 # Import latest image
-echo "Importing latest mockcn image..."
-IMAGE_UUID=$(imgadm avail | grep mockcn | tail -1 | cut -d ' ' -f 1)
+echo "Importing latest mockcloud image..."
+IMAGE_UUID=$(imgadm avail | grep mockcloud | tail -1 | cut -d ' ' -f 1)
 imgadm import ${IMAGE_UUID}
 
 # We assume owner of admin network is also the admin user.
@@ -95,12 +95,12 @@ vmadm create <<EOF
  "archive_on_delete": true,
  "alias": "${zone_alias}",
  "tags": {
-    "smartdc_role": "mockcn"
+    "smartdc_role": "mockcloud"
  },
  "customer_metadata": {
      "mock_oui": "${mock_oui}",
      "rabbitmq": "${RABBITMQ_INFO}",
-     "user-script": "#!/bin/bash\n\nset -o xtrace\nset -o errexit\n\nexec /opt/smartdc/mockcn/bin/init.sh\n\n# exec failed if we got this far.\nexit 2\n"
+     "user-script": "#!/bin/bash\n\nset -o xtrace\nset -o errexit\n\nexec /opt/smartdc/mockcloud/bin/init.sh\n\n# exec failed if we got this far.\nexit 2\n"
  },
  "nics": [
    ${netobj}

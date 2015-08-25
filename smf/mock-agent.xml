@@ -7,7 +7,7 @@
     <dependency name='smartdc-init' grouping='require_all' restart_on='error' type='service'>
       <service_fmri value='svc:/milestone/single-user'/>
     </dependency>
-    <exec_method name='start' type='method' exec='/opt/smartdc/mockcn/smf/mock-agent' timeout_seconds='60'>
+    <exec_method name='start' type='method' exec='/opt/smartdc/mockcloud/smf/mock-agent' timeout_seconds='60'>
       <method_context>
         <method_credential user='root' group='staff'/>
       </method_context>
