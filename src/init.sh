@@ -57,9 +57,6 @@ mount -F lofs /opt/smartdc/mockcloud/bin/zoneadm /usr/sbin/zoneadm
 mount -F lofs /opt/smartdc/mockcloud/bin/zfs /usr/sbin/zfs
 mount -F lofs /opt/smartdc/mockcloud/bin/zpool /usr/sbin/zpool
 
-# replace system.js so we load faked up memory info in heartbeater
-mount -F lofs /opt/smartdc/mockcloud/node_modules/system.js /usr/node/node_modules/system.js
-
 # start mock-agent
 svccfg import /opt/smartdc/mockcloud/smf/mock-agent.xml
 
