@@ -83,7 +83,7 @@ pkg: all
 	[[ -d provisioner-tasks ]] \
 		&& cp provisioner-tasks/* $(MOCKCN_PKG_DIR)/provisioner-tasks/ || /bin/true
 	cp src/sysinfo.js $(MOCKCN_PKG_DIR)/bin/sysinfo
-	cp node_modules/*.js $(MOCKCN_PKG_DIR)/node_modules/
+	cp -PR node_modules/* $(MOCKCN_PKG_DIR)/node_modules/
 	cp src/zfs.sh $(MOCKCN_PKG_DIR)/bin/zfs
 	cp src/zoneadm.sh $(MOCKCN_PKG_DIR)/bin/zoneadm
 	cp src/zoneevent.js $(MOCKCN_PKG_DIR)/bin/zoneevent
