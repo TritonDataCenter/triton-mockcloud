@@ -1,3 +1,0 @@
-[submodule "ur-agent"]
-	path = ur-agent
-	url = git@git.joyent.com:ur-agent.git
