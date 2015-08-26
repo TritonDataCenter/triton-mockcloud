@@ -42,6 +42,17 @@ endif
 include ./tools/mk/Makefile.node_deps.defs
 include ./tools/mk/Makefile.smf.defs
 
+#
+# Due to the unfortunate nature of npm, the Node Package Manager, there appears
+# to be no way to assemble our dependencies without running the lifecycle
+# scripts.  These lifecycle scripts should not be run except in the context of
+# an agent installation or uninstallation, so we provide a magic environment
+# varible to disable them here.
+#
+NPM_ENV =		SDC_AGENT_SKIP_LIFECYCLE=yes \
+			MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFMERGE=/bin/true'
+RUN_NPM_INSTALL =	$(NPM_ENV) $(NPM) install
+
 
 #
 # Repo-specific targets
@@ -62,7 +73,7 @@ pkg: all
 	mkdir -p $(MOCKCLOUD_PKG_DIR)
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/node_modules
 	cp package.json $(MOCKCLOUD_PKG_DIR)/
-	(cd $(MOCKCLOUD_PKG_DIR) && npm install)
+	(cd $(MOCKCLOUD_PKG_DIR) && $(NPM_ENV) npm install)
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/bin
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/lib
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/mocks
