@@ -65,24 +65,26 @@ pkg: all
 	(cd $(MOCKCLOUD_PKG_DIR) && npm install)
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/bin
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/lib
+	mkdir -p $(MOCKCLOUD_PKG_DIR)/mocks
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/provisioner-tasks
 	cp -PR smf \
 		$(MOCKCLOUD_PKG_DIR)
 	cp src/amqp-config.js $(MOCKCLOUD_PKG_DIR)/bin/amqp-config
-	cp src/disklayout.js $(MOCKCLOUD_PKG_DIR)/bin/disklayout
-	cp src/diskjson.js $(MOCKCLOUD_PKG_DIR)/bin/diskjson
+	cp mocks/disklayout.js $(MOCKCLOUD_PKG_DIR)/mocks/disklayout
+	cp mocks/diskjson.js $(MOCKCLOUD_PKG_DIR)/mocks/diskjson
+	cp mocks/disklist.js $(MOCKCLOUD_PKG_DIR)/mocks/disklist
 	cp src/fix-agents.sh $(MOCKCLOUD_PKG_DIR)/bin/fix-agents.sh
 	cp src/init.sh $(MOCKCLOUD_PKG_DIR)/bin/
 	cp src/mock-agent.js $(MOCKCLOUD_PKG_DIR)/bin/mock-agent
 	cp lib/*.json $(MOCKCLOUD_PKG_DIR)/lib/
 	[[ -d provisioner-tasks ]] \
 		&& cp provisioner-tasks/* $(MOCKCLOUD_PKG_DIR)/provisioner-tasks/ || /bin/true
-	cp src/sysinfo.js $(MOCKCLOUD_PKG_DIR)/bin/sysinfo
+	cp mocks/sysinfo.js $(MOCKCLOUD_PKG_DIR)/mocks/sysinfo
 	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
-	cp src/zfs.sh $(MOCKCLOUD_PKG_DIR)/bin/zfs
-	cp src/zoneadm.sh $(MOCKCLOUD_PKG_DIR)/bin/zoneadm
-	cp src/zoneevent.js $(MOCKCLOUD_PKG_DIR)/bin/zoneevent
-	cp src/zpool.sh $(MOCKCLOUD_PKG_DIR)/bin/zpool
+	cp mocks/zfs.sh $(MOCKCLOUD_PKG_DIR)/mocks/zfs
+	cp mocks/zoneadm.sh $(MOCKCLOUD_PKG_DIR)/mocks/zoneadm
+	cp mocks/zoneevent.js $(MOCKCLOUD_PKG_DIR)/mocks/zoneevent
+	cp mocks/zpool.sh $(MOCKCLOUD_PKG_DIR)/mocks/zpool
 	# Clean up some dev / build bits
 	find $(PKG_DIR) -name "*.pyc" | xargs rm -f
 	find $(PKG_DIR) -name "*.o" | xargs rm -f

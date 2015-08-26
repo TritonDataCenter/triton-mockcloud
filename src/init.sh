@@ -4,7 +4,7 @@ set -o errexit
 set -o xtrace
 
 # replace sysinfo with our version
-mount -F lofs /opt/smartdc/mockcloud/bin/sysinfo /usr/bin/sysinfo
+mount -F lofs /opt/smartdc/mockcloud/mocks/sysinfo /usr/bin/sysinfo
 
 # create disks.json from sysinfo, used by disklayout when doing setup
 #(
@@ -46,16 +46,17 @@ cp /lib/sdc/config.sh /opt/smartdc/mockcloud/tmp/config.sh
 EOF
 mount -F lofs /opt/smartdc/mockcloud/tmp/config.sh /lib/sdc/config.sh
 
-# replace disklayout with our version
-mount -F lofs /opt/smartdc/mockcloud/bin/disklayout /usr/bin/disklayout
+# replace disklayout + disklist with our version
+mount -F lofs /opt/smartdc/mockcloud/mocks/disklayout /usr/bin/disklayout
+mount -F lofs /opt/smartdc/mockcloud/mocks/disklist /usr/bin/disklist
 
 # replace zoneevent
-mount -F lofs /opt/smartdc/mockcloud/bin/zoneevent /usr/vm/sbin/zoneevent
+mount -F lofs /opt/smartdc/mockcloud/mocks/zoneevent /usr/vm/sbin/zoneevent
 
 # replace z* tools with our versions
-mount -F lofs /opt/smartdc/mockcloud/bin/zoneadm /usr/sbin/zoneadm
-mount -F lofs /opt/smartdc/mockcloud/bin/zfs /usr/sbin/zfs
-mount -F lofs /opt/smartdc/mockcloud/bin/zpool /usr/sbin/zpool
+mount -F lofs /opt/smartdc/mockcloud/mocks/zoneadm /usr/sbin/zoneadm
+mount -F lofs /opt/smartdc/mockcloud/mocks/zfs /usr/sbin/zfs
+mount -F lofs /opt/smartdc/mockcloud/mocks/zpool /usr/sbin/zpool
 
 # start mock-agent
 svccfg import /opt/smartdc/mockcloud/smf/mock-agent.xml
