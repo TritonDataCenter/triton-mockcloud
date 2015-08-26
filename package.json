@@ -9,7 +9,8 @@
     "node-uuid": "1.4.3",
     "restify": "4.0.0",
     "ur-agent": "git+https://github.com/joyent/sdc-ur-agent.git#555bbf161fa908272b23ca79285d39b89abaefa1",
-    "vasync": "1.6.3"
+    "vasync": "1.6.3",
+    "cn-agent": "git+https://github.com/joyent/sdc-cn-agent.git#master"
   },
   "engines": {
     "node": ">=0.10"
