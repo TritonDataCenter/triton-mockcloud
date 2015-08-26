@@ -17,6 +17,11 @@ function unsupported()
     exit 1
 }
 
+if [[ "$*" =~ "list" && ! -f /mockcn/${MOCKCN_SERVER_UUID}/pool.json ]]; then
+    echo "no pools available"
+    exit 0
+fi
+
 if [[ "$*" == "list -H -o name,size,allocated,free,cap,health,altroot" ]]; then
     # zones	39.8G	27.7G	12.0G	69%	ONLINE	-
     echo "zones	39.8G	27.7G	12.0G	69%	ONLINE	-"

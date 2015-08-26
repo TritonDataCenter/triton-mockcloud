@@ -69,7 +69,7 @@ pkg: all
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/provisioner-tasks
 	cp -PR smf \
 		$(MOCKCLOUD_PKG_DIR)
-	cp src/amqp-config.js $(MOCKCLOUD_PKG_DIR)/bin/amqp-config
+	cp mocks/amqp-config.js $(MOCKCLOUD_PKG_DIR)/mocks/amqp-config
 	cp mocks/disklayout.js $(MOCKCLOUD_PKG_DIR)/mocks/disklayout
 	cp mocks/diskjson.js $(MOCKCLOUD_PKG_DIR)/mocks/diskjson
 	cp mocks/disklist.js $(MOCKCLOUD_PKG_DIR)/mocks/disklist
