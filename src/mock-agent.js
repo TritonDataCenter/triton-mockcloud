@@ -11,6 +11,8 @@ var restify = require('restify');
 var sprintf = require('sprintf').sprintf;
 var sys = require('sys');
 var UrAgent = require('sdc-ur-agent').UrAgent;
+var CnAgent = require('cn-agent/lib/app');
+var CnAgentHttpServer = require('cn-agent/lib/server');
 var uuid = require('node-uuid');
 var vasync = require('vasync');
 
