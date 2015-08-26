@@ -17,6 +17,11 @@ mount -F lofs /opt/smartdc/mockcloud/mocks/sysinfo /usr/bin/sysinfo
 # make config.sh read config from correct place
 mkdir -p /opt/smartdc/mockcloud/tmp
 cp /lib/sdc/config.sh /opt/smartdc/mockcloud/tmp/config.sh
+
+# pretend like agents install is going to work
+mkdir -p /opt/smartdc/agents/bin
+cp /opt/smartdc/mockcloud/mocks/ping-agent.sh /opt/smartdc/agents/bin/ping-agent
+
 /opt/local/bin/patch /opt/smartdc/mockcloud/tmp/config.sh <<"EOF"
 --- /lib/sdc/config.sh  2013-11-10 07:48:35.629886000 +0000
 +++ config.sh   2013-11-13 21:41:04.651518490 +0000
