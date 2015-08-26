@@ -257,7 +257,8 @@ function ensureLogging(side_effects)
     }
 
     filename = '/var/log/vm/logs/' + Date.now(0) + '-'
-        + sprintf('%06d', process.pid) + '-' + logname + '.log';
+        + sprintf('%06d', process.pid) + '-' + process.env.MOCKCN_SERVER_UUID
+        + '-' + logname + '.log';
 
     start_logging();
 }
@@ -1229,7 +1230,6 @@ exports.flatten = function (vmobj, key)
     var tokens = key.split('.');
 
     assertMockCnUuid();
-    throw new Error('UNIMPLEMENTED: flatten');
 
     // NOTE: VM.flatten() currently doesn't produce any logs
 
@@ -1285,7 +1285,6 @@ exports.load = function (uuid, options, callback)
     // to zfs get.
     
     assertMockCnUuid();
-    throw new Error('UNIMPLEMENTED: load');
 
     // options is optional
     if (arguments.length === 2) {
@@ -1439,7 +1438,6 @@ exports.lookup = function (search, options, callback)
     var transform;
 
     assertMockCnUuid();
-    throw new Error('UNIMPLEMENTED: lookup ' + process.env['MOCKCN_SERVER_UUID']);
 
     // options is optional
     if (arguments.length === 2) {
