@@ -85,6 +85,9 @@ pkg: all
 	cp mocks/diskjson.js $(MOCKCLOUD_PKG_DIR)/mocks/diskjson
 	cp mocks/disklist.js $(MOCKCLOUD_PKG_DIR)/mocks/disklist
 	cp mocks/ping-agent.sh $(MOCKCLOUD_PKG_DIR)/mocks/ping-agent
+	cp mocks/onlyif.js $(MOCKCLOUD_PKG_DIR)/mocks/onlyif.js
+	cp mocks/vmload.js $(MOCKCLOUD_PKG_DIR)/mocks/vmload.js
+	cp mocks/VM.js $(MOCKCLOUD_PKG_DIR)/mocks/VM.js
 	cp src/fix-agents.sh $(MOCKCLOUD_PKG_DIR)/bin/fix-agents.sh
 	cp src/init.sh $(MOCKCLOUD_PKG_DIR)/bin/
 	cp src/mock-agent.js $(MOCKCLOUD_PKG_DIR)/bin/mock-agent

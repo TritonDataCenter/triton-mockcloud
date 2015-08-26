@@ -55,6 +55,11 @@ mount -F lofs /opt/smartdc/mockcloud/tmp/config.sh /lib/sdc/config.sh
 mount -F lofs /opt/smartdc/mockcloud/mocks/disklayout /usr/bin/disklayout
 mount -F lofs /opt/smartdc/mockcloud/mocks/disklist /usr/bin/disklist
 
+# mock out vmadm required bits
+mount -F lofs /opt/smartdc/mockcloud/mocks/onlyif.js /usr/node/node_modules/onlyif.js
+mount -F lofs /opt/smartdc/mockcloud/mocks/vmload.js /usr/node/node_modules/vmload/index.js
+mount -F lofs /opt/smartdc/mockcloud/mocks/VM.js /usr/node/node_modules/VM.js
+
 # replace zoneevent
 mount -F lofs /opt/smartdc/mockcloud/mocks/zoneevent /usr/vm/sbin/zoneevent
 
