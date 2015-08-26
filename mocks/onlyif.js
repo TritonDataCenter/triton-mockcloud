@@ -42,6 +42,10 @@
 
 exports.rootInSmartosGlobal = function (callback)
 {
+    if (!process.env.MOCKCN_SERVER_UUID) {
+        callback('You must set MOCKCN_SERVER_UUID');
+        return;
+    }
     // Good luck! You're going to need it!
     callback();
 };
