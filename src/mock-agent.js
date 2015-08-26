@@ -18,6 +18,8 @@ var vasync = require('vasync');
 
 var log = bunyan.createLogger({name: 'mock-ur-agent', level: 'debug'});
 var mockCNs = {};
+var mockCnAgents = {};
+var agentServer;
 var server;
 var state;
 var CN_PROPERTIES;
@@ -245,6 +247,14 @@ function monitorMockCNs() {
                 if (!mockCNs.hasOwnProperty(file)) {
                     // create an instance for this one
                     log.info('starting instance for mock CN ' + file);
+                    mockCnAgents[file] = new CnAgent({
+                        uuid: file,
+                        log: log,
+                        tasklogdir: '/var/log/' + logname + '/logs',
+                        logname: 'mocked-cn-agent',
+                        taskspath: path.join(__dirname, '..', 'node_modules/cn-agent/lib/tasks'),
+                        agentserver: agentServer
+                    });
                     mockCNs[file] = new UrAgent({
                         sysinfoFile: '/mockcn/' + file + '/sysinfo.json',
                         setupStateFile: '/mockcn/' + file + '/setup.json',
@@ -809,6 +819,13 @@ loadState(function (e) {
 
     /* XXX this should change to just a startup load */
     monitorMockCNs();
+
+    log.warn('got here');
+    agentServer = new CnAgentHttpServer({
+        bindip: '0.0.0.0',
+        log: log
+    });
+    agentServer.start();
 
     function respond(req, res, next) {
       res.send('hello ' + req.params.name);
