@@ -263,6 +263,7 @@ function monitorMockCNs() {
                         taskspath: path.join(__dirname, '..', 'node_modules/cn-agent/lib/tasks'),
                         agentserver: agentServer
                     });
+                    mockCnAgents[file].start();
                     mockCNs[file] = new UrAgent({
                         sysinfoFile: '/mockcn/' + file + '/sysinfo.json',
                         setupStateFile: '/mockcn/' + file + '/setup.json',
