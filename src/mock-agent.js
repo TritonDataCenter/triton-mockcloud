@@ -1,8 +1,8 @@
-#!/usr/node/bin/node
-//--abort_on_uncaught_exception
+#!/usr/node/bin/node --abort_on_uncaught_exception
 
 var bunyan = require('bunyan');
 var canned_profiles = require('../lib/canned_profiles.json');
+var child_process = require('child_process');
 var dhcpclient = require('dhcpclient');
 var execFile = require('child_process').execFile;
 var fs = require('fs');
@@ -243,6 +243,14 @@ function monitorMockCNs() {
             }
 
             files.forEach(function (file) {
+                var logname = 'mock-cn-agent' + '/' + file;
+                var tasklog = '/var/log/' + logname + '/logs';
+
+                // XXX HACK
+                execFile('/usr/bin/mkdir', ['-p', tasklog], function (err) {
+                    // XXX DO NOTHING
+                });
+
                 fileCache[file] = true;
                 if (!mockCNs.hasOwnProperty(file)) {
                     // create an instance for this one
@@ -250,7 +258,7 @@ function monitorMockCNs() {
                     mockCnAgents[file] = new CnAgent({
                         uuid: file,
                         log: log,
-                        tasklogdir: '/var/log/' + logname + '/logs',
+                        tasklogdir: tasklog,
                         logname: 'mocked-cn-agent',
                         taskspath: path.join(__dirname, '..', 'node_modules/cn-agent/lib/tasks'),
                         agentserver: agentServer
@@ -730,6 +738,27 @@ function createMockServer(payload, callback) {
                 JSON.stringify(disks, null, 2) + '\n', function (err) {
 
                 cb(err);
+            });
+        }, function (cb) {
+            execFile('/usr/sbin/mdata-get', ['sdc:nics'],
+                function (error, stdout, stderr) {
+
+                var nics;
+
+                if (error) {
+                    cb(error);
+                    return;
+                }
+
+                // XXX will blow up if this doesn't work
+                nics = JSON.parse(stdout);
+                nics.forEach(function (n) {
+                    if (n.nic_tag === 'admin') {
+                        server['Admin IP'] = n.ip;
+                    }
+                });
+
+                cb();
             });
         }, function (cb) {
             // write sysinfo

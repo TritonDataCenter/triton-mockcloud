@@ -171,6 +171,11 @@ function assertMockCnUuid()
     assert(process.env.MOCKCN_SERVER_UUID, 'missing MOCKCN_SERVER_UUID');
 }
 
+function getMockVMJSONFilename(uuid)
+{
+    return (path.join('/zones', MOCKCN_SERVER_UUID, 'vms', uuid + '.json'));
+}
+
 
 // This function should be called by any exported function from this module.
 // It ensures that a logger is setup. If side_effects is true, we'll start
@@ -748,6 +753,13 @@ function validateImage(image, log, callback)
 
     args = ['get', '-P', image.zpool, image.uuid];
 
+    /*
+     * The plan here is to have a /mockcn/CN/imgs/*.json dir and just
+     * load the data from the image.uuid there inoring the zpool.
+     * Probalby should be done in a imgadm mock.
+     */
+    throw new Error('UNIMPLEMENTED: validateImage');
+
     // on any error we fail closed (assume the image does not exist)
     traceExecFile(cmd, args, log, 'imgadm-get',
         function (error, stdout, stderr) {
@@ -992,7 +1004,6 @@ exports.validate = function (brand, action, payload, options, callback)
     var tracers_obj;
 
     assertMockCnUuid();
-    throw new Error('UNIMPLEMENTED: validate');
 
     // options is optional
     if (arguments.length === 4) {
@@ -1202,6 +1213,7 @@ function setQuota(dataset, quota, log, callback)
     var newval;
 
     assert(log, 'no logger passed to setQuota()');
+    throw new Error('UNIMPLEMENTED: setQuota');
 
     if (!dataset) {
         callback(new Error('Invalid dataset: "' + dataset + '"'));
@@ -1573,6 +1585,8 @@ function checkDatasets(payload, log, callback)
 
     assert(log, 'no logger passed to checkDatasets()');
 
+    throw new Error('UNIMPLEMENTED: checkDatasets');
+
     if (process.env.EXPERIMENTAL_VMJS_TRACING) {
         tracers_obj = traceUntilCallback('check-datasets', log, callback);
         callback = tracers_obj.callback;
@@ -1709,6 +1723,7 @@ function lookupInvalidNicTags(nics, log, callback) {
     var tracers_obj;
 
     assert(log, 'no logger passed to lookupInvalidNicTags()');
+    throw new Error('UNIMPLEMENTED: lookupInvalidNicTags');
 
     if (process.env.EXPERIMENTAL_VMJS_TRACING) {
         tracers_obj = traceUntilCallback('lookup-invalid-nictags', log,
@@ -1767,6 +1782,8 @@ function lookupInvalidNicTagMTUs(nics, log, callback) {
     var mtus = {};
 
     assert(log, 'no logger passed to lookupInvalidNicTagMTUs()');
+
+    throw new Error('UNIMPLEMENTED: lookupInvalidNicTagMTUs');
 
     if (!nics || nics.length === 0) {
         callback();
@@ -1864,6 +1881,8 @@ function destroyVolume(volume, log, callback)
 {
     var args;
 
+    throw new Error('UNIMPLEMENTED: destroyVolume');
+
     if (!volume || !volume.name) {
         log.warn({volume: volume}, 'volume missing "name", cannot destroy');
         return;
@@ -1901,6 +1920,7 @@ function createVolume(volume, log, callback)
     var tracers_obj;
 
     assert(log, 'no logger passed for createVolume()');
+    throw new Error('UNIMPLEMENTED: createVolume');
 
     if (process.env.EXPERIMENTAL_VMJS_TRACING) {
         tracers_obj = traceUntilCallback('create-volume', log, callback);
@@ -2029,25 +2049,6 @@ function createVolume(volume, log, callback)
  *
  */
 function createHostConfFileMounts(vmobj, opts, log, callback) {
-    var dnssearch = [];
-    var fake_payload = {uuid: vmobj.uuid, add_filesystems: []};
-    var hosts = [
-        ['127.0.0.1', 'localhost'],
-        ['::1', 'localhost ip6-localhost ip6-loopback'],
-        ['fe00::0', 'ip6-localnet'],
-        ['ff00::0', 'ip6-mcastprefix'],
-        ['ff02::1', 'ip6-allnodes'],
-        ['ff02::2', 'ip6-allrouters']
-    ];
-    var hostsContents = '';
-    var hostLinkContents = '';
-    var hostsFile = '/etc/hosts';
-    var hostname = vmobj.hostname || vmobj.uuid;
-    var hostnameContents = hostname + '\n';
-    var hostnameFile = '/etc/hostname';
-    var resolvers = vmobj.resolvers || [];
-    var resolvConfContents = '';
-    var resolvConfFile = '/etc/resolv.conf';
     var tracers_obj;
 
     if (process.env.EXPERIMENTAL_VMJS_TRACING) {
@@ -2057,187 +2058,11 @@ function createHostConfFileMounts(vmobj, opts, log, callback) {
         log = tracers_obj.log;
     }
 
-    // HACK: since smartos images currently don't have the HostsFile attribute
-    // and SmartOS images put /etc/hosts as a symlink to /etc/inet/hosts, we
-    // need to work around this by setting /etc/inet/hosts as default.
-    if (vmobj.brand === 'joyent-minimal') {
-        hostsFile = '/etc/inet/hosts';
-    }
+    /*
+     *  DO NOTHING ON MOCKCN
+     */
 
-    if (vmobj.hasOwnProperty('internal_metadata')) {
-        if (vmobj.internal_metadata['docker:hostsFile']) {
-            hostsFile = path.normalize(vmobj
-                .internal_metadata['docker:hostsFile']);
-        }
-        if (vmobj.internal_metadata['docker:hostnameFile']) {
-            hostnameFile = path.normalize(vmobj
-                .internal_metadata['docker:hostnameFile']);
-        }
-        if (vmobj.internal_metadata['docker:resolvConfFile']) {
-            resolvConfFile = path.normalize(vmobj
-                .internal_metadata['docker:resolvConfFile']);
-        }
-        if (vmobj.internal_metadata['docker:dnssearch']) {
-            try {
-                dnssearch
-                    = JSON.parse(vmobj.internal_metadata['docker:dnssearch']);
-            } catch (e) {
-                log.error({err: e}, 'Ignoring invalid docker:dnssearch');
-            }
-        }
-        if (vmobj.internal_metadata['docker:linkHosts']) {
-            hostLinkContents = vmobj.internal_metadata['docker:linkHosts'];
-        }
-    }
-
-    // add the hostname attached with the primary IP
-    if (vmobj.nics && vmobj.nics.length) {
-        vmobj.nics.forEach(function (n) {
-            if (n.primary) {
-                hosts.unshift([n.ip, hostname]);
-            }
-        });
-    }
-
-    hosts.forEach(function (h) {
-        hostsContents = hostsContents + h[0] + '\t' + h[1] + '\n';
-    });
-    hostsContents += hostLinkContents;
-
-    resolvers.forEach(function (r) {
-        resolvConfContents = resolvConfContents + 'nameserver ' + r + '\n';
-    });
-    if (dnssearch.length > 0) {
-        resolvConfContents = resolvConfContents + 'search '
-            + dnssearch.join(' ') + '\n';
-    }
-
-    function _createEmptyFile(filename, cb) {
-        var dir;
-
-        log.info('creating empty file for mountpoint: ' + filename);
-        dir = path.dirname(filename);
-        mkdirp(dir, function (err) {
-            if (err) {
-                log.error({err: err}, 'failed to mkdirp(%s)', dir);
-                cb(err);
-                return;
-            }
-            log.info('created dir: %s', dir);
-            try {
-                fs.closeSync(fs.openSync(filename, 'a'));
-            } catch (e) {
-                log.error({err: e}, 'failed to create ' + filename);
-                cb(e);
-                return;
-            }
-
-            cb();
-        });
-    }
-
-    // In order to mount via lofs, the target needs to exist. If it doesn't
-    // exist from the image, we create it so we can mount over it.
-    function _createConfFileTarget(f, cb) {
-        fs.lstat(f, function (error, stats) {
-            if (error) {
-                if (error.code === 'ENOENT') {
-                    _createEmptyFile(f, cb);
-                    return;
-                } else {
-                    log.error({err: error}, 'failed to lstat ' + f);
-                    cb(error);
-                    return;
-                }
-            }
-
-            if (stats.isFile()) {
-                // it's a file! great. We can mount over it.
-                cb();
-                return;
-            } else if (stats.isSymbolicLink()) {
-                fs.unlinkSync(f);
-                _createEmptyFile(f, cb);
-            } else {
-                log.error({stats: stats}, f + ' is not a file');
-                cb(new Error(f + ' is not a file'));
-                return;
-            }
-        });
-    }
-
-    async.each([ {
-        contents: resolvConfContents,
-        filename: resolvConfFile,
-        raw_filename: vmobj.zonepath + '/config/resolv.conf'
-    }, {
-        contents: hostsContents,
-        filename: hostsFile,
-        raw_filename: vmobj.zonepath + '/config/hosts'
-    }, {
-        contents: hostnameContents,
-        filename: hostnameFile,
-        raw_filename: vmobj.zonepath + '/config/hostname'
-    }], function _createConfFile(d, cb) {
-        _createConfFileTarget(path.normalize(vmobj.zonepath + '/root/'
-            + d.filename), function (create_err) {
-
-            if (create_err) {
-                cb(create_err);
-                return;
-            }
-
-            fs.writeFile(d.raw_filename, d.contents, function (err) {
-                if (err) {
-                    cb(err);
-                    return;
-                }
-
-                fake_payload.add_filesystems.push({
-                    source: d.raw_filename,
-                    target: d.filename,
-                    type: 'lofs',
-                    options: ['rw']
-                });
-
-                cb();
-            });
-        });
-    }, function (err) {
-        var zcfg;
-
-        if (err) {
-            callback(err);
-            return;
-        }
-
-        if (opts.onlyUpdateFileContents) {
-            // The files have been updated, that's all that was asked for.
-            callback();
-            return;
-        }
-
-        zcfg = buildFilesystemZonecfg({}, fake_payload);
-
-        zonecfgFile(zcfg, ['-z', vmobj.zonename], log,
-            function (zcfg_err, fds) {
-                if (zcfg_err) {
-                    log.error({
-                        err: zcfg_err,
-                        zcfg: zcfg,
-                        stdout: fds.stdout,
-                        stderr: fds.stderr
-                    }, 'failed to modify zonecfg');
-                    callback(zcfg_err);
-                    return;
-                }
-
-                log.debug({stdout: fds.stdout, stderr: fds.stderr},
-                    'modified zonecfg');
-                callback();
-            }
-        );
-    });
+    callback();
 }
 
 function copyFilesystemData(payload, filesystem, log, callback)
@@ -2418,16 +2243,8 @@ function createFilesystems(payload, filesystems, log, callback)
                     'create',
                     filesystem.source.slice(1) // skip leading '/'
                 ], log, function (err, fds) {
-                    if (err) {
-                        log.error({
-                            err: err,
-                            stdout: fds.stdout,
-                            stderr: fds.stderr
-                        }, 'failed to create volume');
-                        cb(err);
-                        return;
-                    }
-                    copyFilesystemData(payload, filesystem, log, cb);
+                    // on MOCKCN we don't care about data
+                    cb();
                 });
             } else {
                 cb(new Error('createFilesystems() do not recognize source'));
@@ -2468,6 +2285,7 @@ function createVolumes(payload, log, callback)
     var used_disk_indexes = [];
 
     assert(log, 'no logger passed to createVolumes()');
+    throw new Error('UNIMPLEMENTED: createVolumes');
 
     if (process.env.EXPERIMENTAL_VMJS_TRACING) {
         tracers_obj = traceUntilCallback('create-volumes', log, callback);
@@ -2572,11 +2390,10 @@ function updateMetadata(vmobj, payload, log, callback)
     var cmdata = {};
     var imdata = {};
     var key;
-    var mdata = {};
-    var mdata_filename;
+    var new_vmobj = {};
     var tags = {};
-    var tags_filename;
     var tracers_obj;
+    var vmobj_filename;
     var zonepath;
 
     assert(log, 'no logger passed to updateMetadata()');
@@ -2586,6 +2403,9 @@ function updateMetadata(vmobj, payload, log, callback)
         callback = tracers_obj.callback;
         log = tracers_obj.log;
     }
+
+    // with MOCKCN these are both the same (in the VM object)
+    vmobj_filename = getMockVMJSONFilename(uuid);
 
     if (vmobj.hasOwnProperty('zonepath')) {
         zonepath = vmobj.zonepath;
@@ -2598,10 +2418,6 @@ function updateMetadata(vmobj, payload, log, callback)
             + JSON.stringify(vmobj)));
         return;
     }
-
-    // paths are under zonepath but not zoneroot
-    mdata_filename = zonepath + '/config/metadata.json';
-    tags_filename = zonepath + '/config/tags.json';
 
     // customer_metadata
     for (key in vmobj.customer_metadata) {
@@ -2660,18 +2476,13 @@ function updateMetadata(vmobj, payload, log, callback)
         }
     }
 
-    mdata = {'customer_metadata': cmdata, 'internal_metadata': imdata};
+    new_vmobj = require(vmobj_filename);
 
-    async.series([
-        function (next) {
-            writeAndRename(log, 'metadata', mdata_filename,
-                JSON.stringify(mdata, null, 2), next);
-        },
-        function (next) {
-            writeAndRename(log, 'tags', tags_filename,
-                JSON.stringify(tags, null, 2), next);
-        }
-    ], callback);
+    new_vmobj.customer_metadata = cmdata;
+    new_vmobj.internal_metadata = imdata;
+
+    writeAndRename(log, 'metadata/tags', vmobj_filename,
+        JSON.stringify(new_vmobj, null, 2), callback);
 }
 
 function saveMetadata(payload, log, callback)
@@ -9416,6 +9227,7 @@ function deleteVolume(volume, log, callback)
     var origin;
 
     assert(log, 'no logger passed to deleteVolume()');
+    throw new Error('UNIMPLEMENTED: deleteVolume');
 
     if (process.env.EXPERIMENTAL_VMJS_TRACING) {
         tracers_obj = traceUntilCallback('delete-volume', log, callback);
@@ -12540,7 +12352,6 @@ exports.update = function (uuid, payload, options, callback)
     var tracers_obj;
 
     assertMockCnUuid();
-    throw new Error('UNIMPLEMENTED: update');
 
     // options parameter is optional
     if (arguments.length === 3) {

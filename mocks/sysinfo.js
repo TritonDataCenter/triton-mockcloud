@@ -151,6 +151,32 @@ async.series([
 
         cb();
     }, function (cb) {
+        if (final_sysinfo.hasOwnProperty('Agent IP')) {
+            cb();
+            return;
+        }
+
+        execFile('/usr/sbin/mdata-get', ['sdc:nics'],
+            function (error, stdout, stderr) {
+
+            var nics;
+
+            if (error) {
+                cb(error);
+                return;
+            }
+
+            // XXX will blow up if this doesn't work
+            nics = JSON.parse(stdout);
+            nics.forEach(function (n) {
+                if (n.nic_tag === 'admin') {
+                    final_sysinfo['Agent IP'] = n.ip;
+                }
+            });
+
+            cb();
+        });
+    }, function (cb) {
         if (final_sysinfo.hasOwnProperty('Live Image')) {
             cb();
             return;

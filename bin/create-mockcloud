@@ -2,7 +2,7 @@
 #
 # This script exists to create a VM to host mock CNs. Usage is:
 #
-# ./mockcloud <alias>
+# ./create-mockcloud <alias>
 #
 # Where alias will be the alias of the new zone. If a VM already exists with
 # the chosen alias, the script will abort.
@@ -15,9 +15,11 @@ set -o errexit
 
 # Figure out the alias we should used (passed in or default)
 zone_alias=$1
-if [[ -z ${zone_alias} ]]; then
-    echo "Usage: $0 <alias>" >&2
-    exit 1
+if [[ ${zone_alias} == "-h" || ${zone_alias} == "-?" ]]; then
+    echo "Usage: $0 <alias>"
+    exit 0
+elif [[ -z ${zone_alias} ]]; then
+    zone_alias="mockcloud0"
 fi
 
 if [[ -n $(vmadm lookup -1 alias="${zone_alias}") ]]; then
