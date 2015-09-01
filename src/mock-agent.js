@@ -236,6 +236,30 @@ function getBootParams(mac, tftphost, callback) {
     });
 }
 
+
+function instantiateMockCN(uuid) {
+    var logname = 'mock-cn-agent' + '/' + uuid;
+    var tasklog = '/var/log/' + logname + '/logs';
+    log.info('starting instance for mock CN ' + uuid);
+    mockCnAgents[uuid] = new CnAgent({
+        uuid: uuid,
+        log: log,
+        tasklogdir: tasklog,
+        logname: 'mocked-cn-agent',
+        taskspath: path.join(
+            __dirname, '..', 'node_modules/cn-agent/lib/tasks'),
+        agentserver: agentServer
+    });
+    mockCnAgents[uuid].start();
+    mockCNs[uuid] = new UrAgent({
+        sysinfoFile: '/mockcn/' + uuid + '/sysinfo.json',
+        setupStateFile: '/mockcn/' + uuid + '/setup.json',
+        urStartupFilePath: '/tmp/' + uuid + '.tmp-' + genId(),
+        mockCNServerUUID: uuid
+    });
+}
+
+
 function monitorMockCNs() {
 
     function refreshMockCNs() {
@@ -261,24 +285,7 @@ function monitorMockCNs() {
 
                 fileCache[file] = true;
                 if (!mockCNs.hasOwnProperty(file)) {
-                    // create an instance for this one
-                    log.info('starting instance for mock CN ' + file);
-                    mockCnAgents[file] = new CnAgent({
-                        uuid: file,
-                        log: log,
-                        tasklogdir: tasklog,
-                        logname: 'mocked-cn-agent',
-                        taskspath: path.join(
-                            __dirname, '..', 'node_modules/cn-agent/lib/tasks'),
-                        agentserver: agentServer
-                    });
-                    mockCnAgents[file].start();
-                    mockCNs[file] = new UrAgent({
-                        sysinfoFile: '/mockcn/' + file + '/sysinfo.json',
-                        setupStateFile: '/mockcn/' + file + '/setup.json',
-                        urStartupFilePath: '/tmp/' + file + '.tmp-' + genId(),
-                        mockCNServerUUID: file
-                    });
+                    instantiateMockCN(file);
                 }
             });
 
@@ -794,14 +801,7 @@ function createMockServer(payload, callback) {
         }, function (cb) {
             uuid = payload['UUID'];
 
-            // start this guy up
-            mockCNs[uuid] = new UrAgent({
-                sysinfoFile: '/mockcn/' + uuid + '/sysinfo.json',
-                setupStateFile: '/mockcn/' + uuid + '/setup.json',
-                urStartupFilePath: '/tmp/' + uuid + '.tmp-' + genId(),
-                mockCNServerUUID: uuid
-            });
-
+            instantiateMockCN(uuid);
             cb();
         }
     ], callback);
