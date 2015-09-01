@@ -14,6 +14,9 @@ mount -F lofs /opt/smartdc/mockcloud/mocks/sysinfo /usr/bin/sysinfo
     #done
 #)
 
+# Create /opt/smartdc/agents/lib so Ur scripts don't think we're 6.5
+mkdir -p /opt/smartdc/agents/lib
+
 # make config.sh read config from correct place
 mkdir -p /opt/smartdc/mockcloud/tmp
 cp /lib/sdc/config.sh /opt/smartdc/mockcloud/tmp/config.sh
