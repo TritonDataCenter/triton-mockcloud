@@ -13,13 +13,14 @@ var sys = require('sys');
 var UrAgent = require('sdc-ur-agent').UrAgent;
 var CnAgent = require('cn-agent/lib/app');
 var CnAgentHttpServer = require('cn-agent/lib/server');
-var uuid = require('node-uuid');
+var libuuid = require('node-uuid');
 var vasync = require('vasync');
 
 var log = bunyan.createLogger({name: 'mock-ur-agent', level: 'debug'});
 var mockCNs = {};
 var mockCnAgents = {};
 var agentServer;
+var fileCache = {};
 var server;
 var state;
 var CN_PROPERTIES;
@@ -29,37 +30,37 @@ var MOCKCN_DIR = '/mockcn';
 var STATE_FILE = '/mockcn.json';
 
 CN_PROPERTIES = {
-    "Boot Time": {validator: isInteger},
-    "CPU Physical Cores": {validator: isInteger},
-    "CPU Type": {validator: isSimpleString},
-    "CPU Virtualization": {validator: isSimpleString},
-    "CPU Total Cores": {validator: isInteger},
-    "Disks": {validator: isValidDisksObj},
-    "Hostname": {validator: isValidHostname},
-    "HW Family": {optional: true, validator: isSimpleString},
-    "HW Version": {optional: true, validator: isSimpleString},
-    "Link Aggregations": {validator: isValidLinkAgg},
-    "Live Image": {validator: isPlatformStamp},
-    "Manufacturer": {validator: isSimpleString},
-    "MiB of Memory": {validator: isInteger}, // XXX convert to string
-    "Network Interfaces": {validator: isValidNetObj},
-    "Product": {validator: isSimpleString},
-    "SDC Version": {validator: isSDCVersion},
-    "Serial Number": {validator: isSimpleString},
-    "SKU Number": {validator: isSimpleString},
-    "System Type": {validator: isSunOS},
-    "UUID": {validator: isUUID},
-    "Virtual Network Interfaces": {validator: isValidVirtNetObj},
-    "VM Capable": {validator: isBoolean}
+    'Boot Time': {validator: isInteger},
+    'CPU Physical Cores': {validator: isInteger},
+    'CPU Type': {validator: isSimpleString},
+    'CPU Virtualization': {validator: isSimpleString},
+    'CPU Total Cores': {validator: isInteger},
+    'Disks': {validator: isValidDisksObj},
+    'Hostname': {validator: isValidHostname},
+    'HW Family': {optional: true, validator: isSimpleString},
+    'HW Version': {optional: true, validator: isSimpleString},
+    'Link Aggregations': {validator: isValidLinkAgg},
+    'Live Image': {validator: isPlatformStamp},
+    'Manufacturer': {validator: isSimpleString},
+    'MiB of Memory': {validator: isInteger}, // XXX convert to string
+    'Network Interfaces': {validator: isValidNetObj},
+    'Product': {validator: isSimpleString},
+    'SDC Version': {validator: isSDCVersion},
+    'Serial Number': {validator: isSimpleString},
+    'SKU Number': {validator: isSimpleString},
+    'System Type': {validator: isSunOS},
+    'UUID': {validator: isUUID},
+    'Virtual Network Interfaces': {validator: isValidVirtNetObj},
+    'VM Capable': {validator: isBoolean}
 };
 
 /*
  * XXX: TODO: These properties are ignored (they get set for you):
  *
- * "Boot Parameters" // from CNAPI? or TFTP
- * "Datacenter Name"
- * "Setup"
- * "Zpool*"
+ * 'Boot Parameters' // from CNAPI? or TFTP
+ * 'Datacenter Name'
+ * 'Setup'
+ * 'Zpool*'
  *
  */
 
@@ -104,7 +105,8 @@ function isValidVirtNetObj(v) {
 }
 
 function isValidNetObj(v) {
-    // key = e1000g0, fields: 'MAC Address', 'ip4addr', 'Link Status', 'NIC Names'
+    // key = e1000g0, fields: 'MAC Address', 'ip4addr',
+    //       'Link Status', 'NIC Names'
     return true;
 }
 
@@ -130,6 +132,7 @@ function isPlatformStamp(v) {
 }
 
 function isSimpleString(v) {
+    /* JSSTYLED */
     if (v.match(/^[a-zA-Z0-9\ \.\,\-\_]*$/)) {
         return true;
     } else {
@@ -148,7 +151,7 @@ function isSDCVersion(v) {
     return false;
 }
 
-// "borrowed" from VM.js
+// 'borrowed' from VM.js
 function isUUID(str) {
     var re = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
     if (str && str.length === 36 && str.match(re)) {
@@ -164,7 +167,7 @@ function parseBootParams(filename, callback) {
     fs.readFile('/tmp/menu.lst', function (err, data) {
         var found = false;
         var lines;
-        var params = {}
+        var params = {};
         var variables = {};
 
         if (err) {
@@ -181,6 +184,7 @@ function parseBootParams(filename, callback) {
                 return;
             }
 
+            /* JSSTYLED */
             matches = line.match(/^variable (.*) (.*)/);
             if (matches) {
                 variables[matches[1]] = matches[2];
@@ -190,14 +194,18 @@ function parseBootParams(filename, callback) {
                 var pattern = new RegExp('\\$\\{' + key + '\\}', 'g');
                 line = line.replace(pattern, variables[key]);
             });
-            matches = line.match(/^\ *kernel.* ([^\ ]*)$/)
+            matches = line.match(/^\ *kernel.* ([^\ ]*)$/);
             if (matches) {
-                opts = matches[1].match(/([^=]+="[^"]+"|[^=]+=[^,]+)/g);
+                /* JSSTYLED */
+                opts = matches[1].match(/([^=]+='[^']+"|[^=]+=[^,]+)/g);
                 opts.forEach(function (opt) {
                     var chunks = opt.split('=');
 
+                    /* BEGIN JSSTYLED */
                     params[chunks[0].replace(/\-/g, '_').replace(/^,/, '')]
                         = chunks[1].replace(/\"/g, '');
+                    /* END JSSTYLED */
+
                 });
                 found = true;
                 return;
@@ -230,7 +238,7 @@ function getBootParams(mac, tftphost, callback) {
 
 function monitorMockCNs() {
 
-    function refreshMockCNs () {
+    function refreshMockCNs() {
         fs.readdir(MOCKCN_DIR, function (err, files) {
             fileCache = {};
 
@@ -247,7 +255,7 @@ function monitorMockCNs() {
                 var tasklog = '/var/log/' + logname + '/logs';
 
                 // XXX HACK
-                execFile('/usr/bin/mkdir', ['-p', tasklog], function (err) {
+                execFile('/usr/bin/mkdir', ['-p', tasklog], function (execErr) {
                     // XXX DO NOTHING
                 });
 
@@ -260,7 +268,8 @@ function monitorMockCNs() {
                         log: log,
                         tasklogdir: tasklog,
                         logname: 'mocked-cn-agent',
-                        taskspath: path.join(__dirname, '..', 'node_modules/cn-agent/lib/tasks'),
+                        taskspath: path.join(
+                            __dirname, '..', 'node_modules/cn-agent/lib/tasks'),
                         agentserver: agentServer
                     });
                     mockCnAgents[file].start();
@@ -284,13 +293,15 @@ function monitorMockCNs() {
         });
     }
 
-/*
-    // Setup fs.watcher for this DIR to add and remove instances when
-    fs.watch(MOCKCN_DIR, function () {
-        // we don't care about *what* event just happened, just that one did
-        refreshMockCNs();
-    })
-*/
+    /*
+     *    // Setup fs.watcher for this DIR to add and remove instances when
+     *    fs.watch(MOCKCN_DIR, function () {
+     *        // we don't care about *what* event just happened, just that one
+     *        // did
+     *        refreshMockCNs();
+     *    })
+     *
+     */
 
     // call refreshMockCNs() to set the initial mock CNs
     refreshMockCNs();
@@ -299,8 +310,8 @@ function monitorMockCNs() {
 function getTarget(url) {
     var urlParts = url.split('/');
 
-    if (urlParts[0] !== '' || urlParts[1] !== 'servers'
-        || urlParts.length > 3) {
+    if (urlParts[0] !== '' || urlParts[1] !== 'servers' ||
+        urlParts.length > 3) {
 
         // invalid request
         return null;
@@ -326,7 +337,6 @@ function returnError(code, request, res) {
 
 function validateServer(payload) {
     var invalid = false;
-    var uuid = payload.UUID;
     var validated = {};
 
     Object.keys(payload).forEach(function (key) {
@@ -388,7 +398,8 @@ function loadState(callback) {
                 state = {cn_indexes: {}};
                 callback();
             } else {
-                log.error(error, 'loadJsonConfig() failed to load ' + filename);
+                log.error(error,
+                          'loadJsonConfig() failed to load ' + STATE_FILE);
                 callback(error);
                 return;
             }
@@ -406,21 +417,23 @@ function loadState(callback) {
 }
 
 function saveState(callback) {
-    fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2) + '\n', function (err) {
-        if (err) {
-            callback(err);
-            return;
-        }
-        callback();
-    });
+    fs.writeFile(
+        STATE_FILE, JSON.stringify(state, null, 2) + '\n',
+        function (err) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            callback();
+        });
 }
 
 function addMAC(nic, mock_oui, cn_index, nic_index, callback) {
     var index_octets;
-    index_octets = sprintf("%04x", cn_index).match(/.{2}/g);
+    index_octets = sprintf('%04x', cn_index).match(/.{2}/g);
 
     nic['MAC Address']
-        = sprintf("%s:%s:%02x", mock_oui, index_octets.join(':'), nic_index);
+        = sprintf('%s:%s:%02x', mock_oui, index_octets.join(':'), nic_index);
 
     log.debug({nic: nic}, 'NIC');
 
@@ -483,8 +496,8 @@ function applyDefaults(payload, callback) {
 
             canned_profile_names = Object.keys(canned_profiles);
 
-            if (payload.hasOwnProperty('Product')
-                && canned_profile_names.indexOf(payload['Product']) !== -1) {
+            if (payload.hasOwnProperty('Product') &&
+                canned_profile_names.indexOf(payload['Product']) !== -1) {
 
                 profile = payload['Product'];
                 log.debug('payload had "Product", using profile: ' + profile);
@@ -496,13 +509,13 @@ function applyDefaults(payload, callback) {
 
             template = canned_profiles[profile];
 
-            // If we have 'Disks' in payload, but not VID + PID, try to determine those
-            // from profile.
+            // If we have 'Disks' in payload, but not VID + PID, try to
+            // determine those from profile.
             if (payload.hasOwnProperty('Disks')) {
                 Object.keys(template['Disks']).forEach(function (d) {
                     d = template['Disks'][d];
-                    if (!ssd_type.hasOwnProperty('PID')
-                        && d.hasOwnProperty('SSD') && d['SSD']) {
+                    if (!ssd_type.hasOwnProperty('PID') &&
+                        d.hasOwnProperty('SSD') && d['SSD']) {
 
                         if (d.hasOwnProperty('PID')) {
                             log.debug('default SSD PID="' + d['PID'] + '"');
@@ -512,8 +525,8 @@ function applyDefaults(payload, callback) {
                             log.debug('default SSD VID="' + d['VID'] + '"');
                             ssd_type['VID'] = d['VID'];
                         }
-                    } else if (!disk_type.hasOwnProperty('PID')
-                        && ! d.hasOwnProperty('SSD')) {
+                    } else if (!disk_type.hasOwnProperty('PID') &&
+                               ! d.hasOwnProperty('SSD')) {
 
                         if (d.hasOwnProperty('PID')) {
                             log.debug('default disk PID="' + d['PID'] + '"');
@@ -529,24 +542,24 @@ function applyDefaults(payload, callback) {
                 Object.keys(payload['Disks']).forEach(function (d) {
                     d = payload['Disks'][d];
                     if (d.hasOwnProperty('SSD') && d['SSD']) {
-                        if (!d.hasOwnProperty('PID')
-                            && ssd_type.hasOwnProperty('PID')) {
+                        if (!d.hasOwnProperty('PID') &&
+                            ssd_type.hasOwnProperty('PID')) {
 
                             d['PID'] = ssd_type['PID'];
                         }
-                        if (!d.hasOwnProperty('VID')
-                            && ssd_type.hasOwnProperty('VID')) {
+                        if (!d.hasOwnProperty('VID') &&
+                            ssd_type.hasOwnProperty('VID')) {
 
                             d['VID'] = ssd_type['VID'];
                         }
                     } else {
-                        if (!d.hasOwnProperty('PID')
-                            && disk_type.hasOwnProperty('PID')) {
+                        if (!d.hasOwnProperty('PID') &&
+                            disk_type.hasOwnProperty('PID')) {
 
                             d['PID'] = disk_type['PID'];
                         }
-                        if (!d.hasOwnProperty('VID')
-                            && disk_type.hasOwnProperty('VID')) {
+                        if (!d.hasOwnProperty('VID') &&
+                            disk_type.hasOwnProperty('VID')) {
 
                             d['VID'] = disk_type['VID'];
                         }
@@ -603,12 +616,13 @@ function applyDefaults(payload, callback) {
                 func: function (n, c) {
                     var nic = payload['Network Interfaces'][n];
                     addMAC(nic, mock_oui, cn_index, nic_index++, c);
-                    if (nic.hasOwnProperty('NIC Names')
-                        && nic['NIC Names'].indexOf('admin') !== -1) {
+                    if (nic.hasOwnProperty('NIC Names') &&
+                        nic['NIC Names'].indexOf('admin') !== -1) {
 
                         admin_nic = nic;
                     } else if (nic_index === 1 && !admin_nic) {
-                        // default to first one in case we don't have specified one
+                        // default to first one in case we don't have specified
+                        // one
                         admin_nic = nic;
                     }
                 }
@@ -632,13 +646,15 @@ function applyDefaults(payload, callback) {
                 return;
             });
         }, function (cb) {
-            getBootParams(admin_nic['MAC Address'], tftpdhost, function (err, params) {
-                if (!err) {
-                    log.debug('got boot params: ' + JSON.stringify(params, null, 2));
-                    payload['Boot Parameters'] = params;
-                }
-                cb(err);
-            });
+            getBootParams(admin_nic['MAC Address'], tftpdhost,
+                function (err, params) {
+                    if (!err) {
+                        log.debug('got boot params: ' +
+                                  JSON.stringify(params, null, 2));
+                        payload['Boot Parameters'] = params;
+                    }
+                    cb(err);
+                });
         }, function (cb) {
             if (payload.hasOwnProperty('Hostname')) {
                 cb();
@@ -666,7 +682,7 @@ function applyDefaults(payload, callback) {
 }
 
 function createMockServer(payload, callback) {
-    var server;
+    var mockserver;
     var uuid = payload.UUID;
     var validated;
 
@@ -684,55 +700,59 @@ function createMockServer(payload, callback) {
         }, function (cb) {
             applyDefaults(payload, function (err, data) {
                 if (!err) {
-                    server = data;
+                    mockserver = data;
                     log.debug({payload: server}, 'after applying defaults');
                 }
                 cb(err);
             });
         }, function (cb) {
-            var uuid = server.UUID;
+            uuid = mockserver.UUID;
 
             // make directory
-            fs.mkdir('/mockcn', 0755, function (e) {
+            fs.mkdir('/mockcn', parseInt('0755', 8), function (e) {
                 if (e && e.code !== 'EEXIST') {
                     log.error({err: e}, 'Error creating /mockcn');
                     cb(e);
                     return;
                 }
-                fs.mkdir('/mockcn/' + uuid, 0755, function (mkdir_uuid_e) {
-                    if (mkdir_uuid_e) {
-                        log.error({err: e}, 'Error creating /mockcn/' + uuid);
-                        cb(mkdir_uuid_e);
-                        return;
-                    }
+                fs.mkdir('/mockcn/' + uuid, parseInt('0755', 8),
+                    function (mkdir_uuid_e) {
+                        if (mkdir_uuid_e) {
+                            log.error(
+                                {err: e}, 'Error creating /mockcn/' + uuid);
+                            cb(mkdir_uuid_e);
+                            return;
+                        }
 
-                    cb();
-                });
+                        cb();
+                    });
             });
         }, function (cb) {
             var disks = [];
-            var uuid = server.UUID;
+            uuid = mockserver.UUID;
 
             // write disks
-            Object.keys(server.Disks).forEach(function (d) {
-                var size = server.Disks[d]['Size in GB'];
+            Object.keys(mockserver.Disks).forEach(function (d) {
+                var size = mockserver.Disks[d]['Size in GB'];
 
                 size = (size * 1000 * 1000 * 1000);
                 disks.push({
                     type: 'SCSI',
                     name: d,
-                    vid: server['Disks'][d]['VID'] ? server['Disks'][d]['VID'] : 'HITACHI',
-                    pid: server['Disks'][d]['PID'] ? server['Disks'][d]['PID'] : 'HUC109060CSS600',
+                    vid: mockserver['Disks'][d]['VID']
+                            ? server['Disks'][d]['VID'] : 'HITACHI',
+                    pid: mockserver['Disks'][d]['PID']
+                            ? server['Disks'][d]['PID'] : 'HUC109060CSS600',
                     size: size,
                     removable: false,
-                    solid_state: server['Disks'][d]['SSD'] ? true : false
+                    solid_state: mockserver['Disks'][d]['SSD'] ? true : false
                 });
 
                 // Some properties only exist until we've written out the
                 // disks.json and don't go to sysinfo, we remove those now
-                delete server['Disks'][d]['VID'];
-                delete server['Disks'][d]['PID'];
-                delete server['Disks'][d]['SSD'];
+                delete mockserver['Disks'][d]['VID'];
+                delete mockserver['Disks'][d]['PID'];
+                delete mockserver['Disks'][d]['SSD'];
             });
 
             fs.writeFile('/mockcn/' + uuid + '/disks.json',
@@ -755,7 +775,7 @@ function createMockServer(payload, callback) {
                 nics = JSON.parse(stdout);
                 nics.forEach(function (n) {
                     if (n.nic_tag === 'admin') {
-                        server['Admin IP'] = n.ip;
+                        mockserver['Admin IP'] = n.ip;
                     }
                 });
 
@@ -764,7 +784,7 @@ function createMockServer(payload, callback) {
         }, function (cb) {
             // write sysinfo
             fs.writeFile('/mockcn/' + uuid + '/sysinfo.json',
-                JSON.stringify(server, null, 2) + '\n', function (err) {
+                JSON.stringify(mockserver, null, 2) + '\n', function (err) {
 
                 cb(err);
             });
@@ -772,7 +792,7 @@ function createMockServer(payload, callback) {
             // write out the global state file
             saveState(cb);
         }, function (cb) {
-            var uuid = payload['UUID'];
+            uuid = payload['UUID'];
 
             // start this guy up
             mockCNs[uuid] = new UrAgent({
@@ -824,7 +844,7 @@ function createServer(req, res, next) {
     log.info({payload: payload, params: req.params}, 'PAYLOAD');
 
     if (!payload.UUID) {
-        payload.UUID = uuid.v4();
+        payload.UUID = libuuid.v4();
     }
     if (mockCNs[payload.UUID]) {
         next(restify.ConflictError('CN already exists'));
@@ -872,8 +892,7 @@ loadState(function (e) {
     server.post('/servers', createServer);
     server.del('/servers/:uuid', deleteServer);
 
-    server.listen(HTTP_LISTEN_PORT, HTTP_LISTEN_IP, function() {
+    server.listen(HTTP_LISTEN_PORT, HTTP_LISTEN_IP, function () {
         console.log('%s listening at %s', server.name, server.url);
     });
 });
-

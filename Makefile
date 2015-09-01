@@ -12,10 +12,10 @@ TOP := $(shell pwd)
 #
 # Files
 #
-#JS_FILES	:= $(shell ls *.js) $(shell find lib test -name '*.js')
-#JSL_CONF_NODE	 = tools/jsl.node.conf
-#JSL_FILES_NODE   = $(JS_FILES)
-#JSSTYLE_FILES	 = $(JS_FILES)
+JS_FILES	:= $(shell ls *.js) $(shell find src lib -name '*.js')
+JSL_CONF_NODE	 = tools/jsl.node.conf
+JSL_FILES_NODE   = $(JS_FILES)
+JSSTYLE_FILES	 = $(JS_FILES)
 PKG_DIR = $(BUILD)/pkg
 MOCKCLOUD_PKG_DIR = $(PKG_DIR)/root/opt/smartdc/mockcloud
 RELEASE_TARBALL=$(NAME)-pkg-$(STAMP).tar.bz2
