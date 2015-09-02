@@ -79,24 +79,12 @@ pkg: all
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/mocks
 	cp -PR smf \
 		$(MOCKCLOUD_PKG_DIR)
-	cp mocks/amqp-config.js $(MOCKCLOUD_PKG_DIR)/mocks/amqp-config
-	cp mocks/disklayout.js $(MOCKCLOUD_PKG_DIR)/mocks/disklayout
-	cp mocks/diskjson.js $(MOCKCLOUD_PKG_DIR)/mocks/diskjson
-	cp mocks/disklist.js $(MOCKCLOUD_PKG_DIR)/mocks/disklist
-	cp mocks/ping-agent.sh $(MOCKCLOUD_PKG_DIR)/mocks/ping-agent
-	cp mocks/onlyif.js $(MOCKCLOUD_PKG_DIR)/mocks/onlyif.js
-	cp mocks/vmload.js $(MOCKCLOUD_PKG_DIR)/mocks/vmload.js
-	cp mocks/VM.js $(MOCKCLOUD_PKG_DIR)/mocks/VM.js
+	cp mocks/* $(MOCKCLOUD_PKG_DIR)/mocks/
 	cp src/fix-agents.sh $(MOCKCLOUD_PKG_DIR)/bin/fix-agents.sh
 	cp src/init.sh $(MOCKCLOUD_PKG_DIR)/bin/
 	cp src/mock-agent.js $(MOCKCLOUD_PKG_DIR)/bin/mock-agent
 	cp lib/*.json $(MOCKCLOUD_PKG_DIR)/lib/
-	cp mocks/sysinfo.js $(MOCKCLOUD_PKG_DIR)/mocks/sysinfo
 	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
-	cp mocks/zfs.sh $(MOCKCLOUD_PKG_DIR)/mocks/zfs
-	cp mocks/zoneadm.sh $(MOCKCLOUD_PKG_DIR)/mocks/zoneadm
-	cp mocks/zoneevent.js $(MOCKCLOUD_PKG_DIR)/mocks/zoneevent
-	cp mocks/zpool.sh $(MOCKCLOUD_PKG_DIR)/mocks/zpool
 	# Clean up some dev / build bits
 	find $(PKG_DIR) -name "*.pyc" | xargs rm -f
 	find $(PKG_DIR) -name "*.o" | xargs rm -f

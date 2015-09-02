@@ -11,6 +11,6 @@ for agent in amon-agent amon-zoneevents amon-relay cabase cainstsvc \
     /opt/smartdc/agents/bin/apm uninstall ${agent}
 done
 
-cp /opt/smartdc/mockcloud/mocks/amqp-config \
+cp /opt/smartdc/mockcloud/mocks/amqp-config.js \
     /opt/smartdc/agents/bin/amqp-config
 
