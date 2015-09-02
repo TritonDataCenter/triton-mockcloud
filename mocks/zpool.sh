@@ -30,6 +30,10 @@ elif [[ "$*" == "list -H -p -o name" ]]; then
 elif [[ "$*" == "list -H -o size -p zones" ]]; then
     total=$(json capacity < /mockcn/${MOCKCN_SERVER_UUID}/pool.json)
     echo "${total}"
+elif [[ "$*" == "list -H -o size,alloc -p zones" ]]; then
+    total=$(json capacity < /mockcn/${MOCKCN_SERVER_UUID}/pool.json)
+    alloc=$(json usage < /mockcn/${MOCKCN_SERVER_UUID}/pool.json)
+    echo "${total}	${alloc}"
 else
     unsupported
 fi
