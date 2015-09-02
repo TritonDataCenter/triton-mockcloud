@@ -46,8 +46,8 @@ elif [[ "$*" == "get -Hp -o name,property,value used,available zones" ]]; then
     total=$(json capacity < /mockcn/${MOCKCN_SERVER_UUID}/pool.json)
     used=$(json usage < /mockcn/${MOCKCN_SERVER_UUID}/pool.json)
     avail=$((${total} - ${used}))
-    echo "zones used  ${used}"
-    echo "zones available ${avail}"
+    echo "zones	used	${used}"
+    echo "zones	available	${avail}"
 else
     unsupported
 fi
