@@ -77,7 +77,6 @@ pkg: all
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/bin
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/lib
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/mocks
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/provisioner-tasks
 	cp -PR smf \
 		$(MOCKCLOUD_PKG_DIR)
 	cp mocks/amqp-config.js $(MOCKCLOUD_PKG_DIR)/mocks/amqp-config
@@ -92,8 +91,6 @@ pkg: all
 	cp src/init.sh $(MOCKCLOUD_PKG_DIR)/bin/
 	cp src/mock-agent.js $(MOCKCLOUD_PKG_DIR)/bin/mock-agent
 	cp lib/*.json $(MOCKCLOUD_PKG_DIR)/lib/
-	[[ -d provisioner-tasks ]] \
-		&& cp provisioner-tasks/* $(MOCKCLOUD_PKG_DIR)/provisioner-tasks/ || /bin/true
 	cp mocks/sysinfo.js $(MOCKCLOUD_PKG_DIR)/mocks/sysinfo
 	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
 	cp mocks/zfs.sh $(MOCKCLOUD_PKG_DIR)/mocks/zfs
