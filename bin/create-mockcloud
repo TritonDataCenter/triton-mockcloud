@@ -90,12 +90,14 @@ echo "Creating VM..."
 vmadm create <<EOF
 {
  "brand": "joyent-minimal",
+ "dns_domain": "${CONFIG_dns_domain}",
  "quota": 20,
  "image_uuid": "${IMAGE_UUID}",
  "owner_uuid": "${OWNER_UUID}",
  "ram": 1536,
  "archive_on_delete": true,
  "alias": "${zone_alias}",
+ "resolvers": "${CONFIG_binder_admin_ips}",
  "tags": {
     "smartdc_role": "mockcloud"
  },
