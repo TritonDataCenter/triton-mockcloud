@@ -708,7 +708,7 @@ function createMockServer(payload, callback) {
             applyDefaults(payload, function (err, data) {
                 if (!err) {
                     mockserver = data;
-                    log.debug({payload: server}, 'after applying defaults');
+                    log.debug({payload: mockserver}, 'after applying defaults');
                 }
                 cb(err);
             });
@@ -747,9 +747,9 @@ function createMockServer(payload, callback) {
                     type: 'SCSI',
                     name: d,
                     vid: mockserver['Disks'][d]['VID']
-                            ? server['Disks'][d]['VID'] : 'HITACHI',
+                            ? mockserver['Disks'][d]['VID'] : 'HITACHI',
                     pid: mockserver['Disks'][d]['PID']
-                            ? server['Disks'][d]['PID'] : 'HUC109060CSS600',
+                            ? mockserver['Disks'][d]['PID'] : 'HUC109060CSS600',
                     size: size,
                     removable: false,
                     solid_state: mockserver['Disks'][d]['SSD'] ? true : false
