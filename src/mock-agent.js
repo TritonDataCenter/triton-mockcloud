@@ -242,6 +242,7 @@ function instantiateMockCN(uuid) {
     var tasklog = '/var/log/' + logname + '/logs';
     log.info('starting instance for mock CN ' + uuid);
     mockCnAgents[uuid] = new CnAgent({
+        env: {'MOCKCN_SERVER_UUID': uuid},
         uuid: uuid,
         log: log,
         tasklogdir: tasklog,
