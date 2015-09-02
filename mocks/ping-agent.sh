@@ -14,4 +14,8 @@
 # succeed.
 #
 
+echo "ping-agent: called by: ${PPID}" \
+    >> /var/log/unsupported-mock-ping-agent.log
+ptree ${PPID} >> /var/log/unsupported-mock-ping-agent.log
+
 exit 0
