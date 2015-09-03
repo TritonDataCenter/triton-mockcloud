@@ -3,8 +3,12 @@
 #set -o xtrace
 
 log=/var/log/unsupported-mock-zfs.log
+date=$(/opt/local/bin/date --rfc-3339=seconds | tr ' ' 'T')
+caller=$(pargs -la ${PPID})
 
-echo "MOCKCN_SERVER_UUID=${MOCKCN_SERVER_UUID}" >> ${log}
+echo "${date},MOCKCN_SERVER_UUID=${MOCKCN_SERVER_UUID}" >> ${log}
+echo "  \\_ caller is: ${caller}" >> ${log}
+
 if [[ -z ${MOCKCN_SERVER_UUID} ]]; then
     echo "MISSING MOCKCN_SERVER_UUID"
     exit 2
@@ -48,6 +52,10 @@ elif [[ "$*" == "get -Hp -o name,property,value used,available zones" ]]; then
     avail=$((${total} - ${used}))
     echo "zones	used	${used}"
     echo "zones	available	${avail}"
+elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/" && ${caller} =~ "tasks/image_ensure_present" ]]; then
+    # For now, always succeed on ensure_image and return hardcoded values
+    dataset=${@: -1}
+    printf "${dataset}\t193M\t37.5G\t193M\tfilesystem\t/${dataset}\n"
 else
     unsupported
 fi
