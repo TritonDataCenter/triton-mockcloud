@@ -71,6 +71,10 @@ mount -F lofs /opt/smartdc/mockcloud/mocks/vmload.js /usr/vm/node_modules/vmload
 umount /usr/vm/node_modules/VM.js || /bin/true
 mount -F lofs /opt/smartdc/mockcloud/mocks/VM.js /usr/vm/node_modules/VM.js
 
+# img tools
+umount /usr/img/sbin/imgadm || /bin/true
+mount -F lofs /opt/smartdc/mockcloud/mocks/imgadm.sh /usr/img/sbin/imgadm
+
 # replace zoneevent
 umount /usr/vm/sbin/zoneevent || /bin/true
 mount -F lofs /opt/smartdc/mockcloud/mocks/zoneevent.js /usr/vm/sbin/zoneevent
