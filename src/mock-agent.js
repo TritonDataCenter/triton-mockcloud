@@ -2,16 +2,14 @@
 
 var bunyan = require('bunyan');
 var canned_profiles = require('../lib/canned_profiles.json');
-var child_process = require('child_process');
+var cp = require('child_process');
 var dhcpclient = require('dhcpclient');
-var execFile = require('child_process').execFile;
+var execFile = cp.execFile;
 var fs = require('fs');
 var path = require('path');
 var restify = require('restify');
 var sprintf = require('sprintf').sprintf;
 var sys = require('sys');
-var UrAgent = require('sdc-ur-agent').UrAgent;
-var CnAgent = require('cn-agent/lib/app');
 var CnAgentHttpServer = require('cn-agent/lib/server');
 var libuuid = require('node-uuid');
 var vasync = require('vasync');
@@ -216,6 +214,179 @@ function parseBootParams(filename, callback) {
     });
 }
 
+// BEGIN REPLACING ALL OF CHILD_PROCESS
+
+function mockExec(uuid, command /* , options, callback */)
+{
+    var callback;
+    var options = {
+        encoding: 'utf8',
+        timeout: 0,
+        maxBuffer: 200 * 1024,
+        killSignal: 'SIGTERM',
+        cwd: null,
+        env: null
+    };
+    var pos = 2;
+
+    while (pos < arguments.length) {
+        if (typeof (arguments[pos]) === 'function') {
+            callback = arguments[pos];
+        } else if (typeof (arguments[pos]) === 'object') {
+            options = arguments[pos];
+        } else {
+            throw new Error('wtf is ' + typeof (arguments[pos])
+                + ' doing as arg ' + pos);
+        }
+        pos++;
+    }
+
+    if (!options.env) {
+        options.env = {};
+    }
+    options.env.MOCKCN_SERVER_UUID = uuid;
+
+    log.debug({
+        uuid: uuid,
+        command: command,
+        opt_type: typeof (options),
+        opts: options,
+        callback: JSON.stringify(callback)
+    }, 'gonna exec()');
+
+    return cp.exec(command, options, callback);
+}
+
+function mockExecFile(uuid, file /* , args, options, callback */)
+{
+    var args = [];
+    var callback;
+    var options = {
+        encoding: 'utf8',
+        timeout: 0,
+        maxBuffer: 200 * 1024,
+        killSignal: 'SIGTERM',
+        cwd: null,
+        env: null
+    };
+    var pos = 2;
+
+    while (pos < arguments.length) {
+        if (Array.isArray(arguments[pos])) {
+            args = arguments[pos];
+        } else if (typeof (arguments[pos]) === 'function') {
+            callback = arguments[pos];
+        } else if (typeof (arguments[pos]) === 'object') {
+            options = arguments[pos];
+        } else {
+            throw new Error('wtf is ' + typeof (arguments[pos])
+                + ' doing as arg ' + pos);
+        }
+        pos++;
+    }
+
+    if (!options.env) {
+        options.env = {};
+    }
+    options.env.MOCKCN_SERVER_UUID = uuid;
+
+    log.debug({
+        uuid: uuid,
+        file: file,
+        args: JSON.stringify(args),
+        opt_type: typeof (options),
+        opts: options,
+        callback: JSON.stringify(callback)
+    }, 'gonna execFile()');
+
+    return cp.execFile(file, args, options, callback);
+}
+
+function mockSpawn(uuid, command /* , args, options */)
+{
+    var args = [];
+    var options = {
+        encoding: 'utf8',
+        timeout: 0,
+        maxBuffer: 200 * 1024,
+        killSignal: 'SIGTERM',
+        cwd: null,
+        env: null
+    };
+    var pos = 2;
+
+    while (pos < arguments.length) {
+        if (Array.isArray(arguments[pos])) {
+            args = arguments[pos];
+        } else if (typeof (arguments[pos]) === 'object') {
+            options = arguments[pos];
+        } else {
+            throw new Error('wtf is ' + typeof (arguments[pos])
+                + ' doing as arg ' + pos);
+        }
+        pos++;
+    }
+
+    if (!options.env) {
+        options.env = {};
+    }
+    options.env.MOCKCN_SERVER_UUID = uuid;
+
+    log.debug({
+        uuid: uuid,
+        command: JSON.stringify(command),
+        args: JSON.stringify(args),
+        opt_type: typeof (options),
+        opts: options
+    }, 'gonna spawn()');
+
+    return cp.spawn(command, args, options);
+}
+
+function mockFork(uuid, modulePath /* , args, options */)
+{
+    var args = [];
+    var options = {
+        encoding: 'utf8',
+        timeout: 0,
+        maxBuffer: 200 * 1024,
+        killSignal: 'SIGTERM',
+        cwd: null,
+        env: null
+    };
+    var pos = 2;
+
+    while (pos < arguments.length) {
+        if (Array.isArray(arguments[pos])) {
+            args = arguments[pos];
+        } else if (typeof (arguments[pos]) === 'object') {
+            options = arguments[pos];
+        } else {
+            throw new Error('wtf is ' + typeof (arguments[pos])
+                + ' doing as arg ' + pos);
+        }
+        pos++;
+    }
+
+    if (!options.env) {
+        options.env = {};
+    }
+    options.env.MOCKCN_SERVER_UUID = uuid;
+
+    log.debug({
+        uuid: uuid,
+        modulePath: JSON.stringify(modulePath),
+        args: JSON.stringify(args),
+        opt_type: typeof (options),
+        opts: options
+    }, 'gonna fork()');
+
+    return cp.fork(modulePath, args, options);
+}
+
+// FINISH REPLACING ALL OF CHILD_PROCESS
+
+
 function getBootParams(mac, tftphost, callback) {
     var args;
     var cmd = '/opt/local/bin/tftp';
@@ -238,11 +409,42 @@ function getBootParams(mac, tftphost, callback) {
 
 
 function instantiateMockCN(uuid) {
+    var CnAgent;
+    var cpMock;
     var logname = 'mock-cn-agent' + '/' + uuid;
+    var mockery = require('mockery');
     var tasklog = '/var/log/' + logname + '/logs';
+    var UrAgent;
+
     log.info('starting instance for mock CN ' + uuid);
+
+    function mkMock(fn) {
+        return function () {
+            // Make real array from arguments
+            var args = Array.prototype.slice.call(arguments);
+            log.debug('mocking for ' + uuid);
+            args.unshift(uuid);
+            return fn.apply(this, args);
+        };
+    }
+
+    cpMock = {
+        exec: mkMock(mockExec),
+        execFile: mkMock(mockExecFile),
+        fork: mkMock(mockFork),
+        spawn: mkMock(mockSpawn)
+    };
+
+    mockery.enable({ useCleanCache: true });
+    mockery.registerMock('child_process', cpMock);
+
+    UrAgent = require('sdc-ur-agent').UrAgent;
+    CnAgent = require('cn-agent/lib/app');
+
+    mockery.deregisterMock('child_process');
+    mockery.disable();
+
     mockCnAgents[uuid] = new CnAgent({
-        env: {'MOCKCN_SERVER_UUID': uuid},
         uuid: uuid,
         log: log,
         tasklogdir: tasklog,
