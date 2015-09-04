@@ -60,7 +60,7 @@ elif [[ "$*" == "get -Hp -o name,property,value used,available zones" ]]; then
 # duplicate uuid.
 #
 elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/" && ${caller} =~ "tasks/image_ensure_present" ]]; then
-    dataset=${@:-1}
+    dataset=${@: -1}
     dataset_uuid=$(echo ${dataset} | cut -d'/' -f2-)
     printf "${dataset}\t193M\t37.5G\t193M\tfilesystem\t/${dataset}\n"
     ## Also add it here to the CN's list if it
@@ -69,13 +69,13 @@ elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/"
     else
         if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
             ## image doesn't exist, add it
-						json -e "this['${dataset_uuid}']={}" \
+            json -e "this['${dataset_uuid}']={}" \
                 < /mockcn/${MOCKCN_SERVER_UUID}/images.json > /mockcn/${MOCKCN_SERVER_UUID}/images.json.new && \
                 mv /mockcn/${MOCKCN_SERVER_UUID}/images.json.new /mockcn/${MOCKCN_SERVER_UUID}/images.json
         fi
     fi
 elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/" && ${caller} =~ "tasks/machine_create" ]]; then
-    dataset=${@:-1}
+    dataset=${@: -1}
     dataset_uuid=$(echo ${dataset} | cut -d'/' -f2-)
     if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
         echo "1: saying ${dataset} - ${dataset_uuid} doesn't exist" >> ${log}
@@ -86,7 +86,7 @@ elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/"
         printf "${dataset}\t193M\t37.5G\t193M\tfilesystem\t/${dataset}\n"
     fi
 elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t filesystem zones/" && ${caller} =~ "tasks/machine_create" ]]; then
-    dataset=${@:-1}
+    dataset=${@: -1}
     dataset_uuid=$(echo ${dataset} | cut -d'/' -f2-)
     if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
         echo "3: saying ${dataset} - ${dataset_uuid} doesn't exist" >> ${log}
