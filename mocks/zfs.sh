@@ -52,31 +52,52 @@ elif [[ "$*" == "get -Hp -o name,property,value used,available zones" ]]; then
     avail=$((${total} - ${used}))
     echo "zones	used	${used}"
     echo "zones	available	${avail}"
+#
+# During a provision we first check image_ensure_present to ensure the image exists, if not
+# We'll pull it with imgadm. Then in machine_create we do the same check. Then we also check
+# in imgadm.js to see whether there's a -partial in which case we'll download.
+# then we check for -t filesystem of the new zone's uuid to prevent provisioning a
+# duplicate uuid.
+#
 elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/" && ${caller} =~ "tasks/image_ensure_present" ]]; then
-    dataset=${@: -1}
+    dataset=${@:-1}
     dataset_uuid=$(echo ${dataset} | cut -d'/' -f2-)
     printf "${dataset}\t193M\t37.5G\t193M\tfilesystem\t/${dataset}\n"
     ## Also add it here to the CN's list if it
     if [[ ! -f /mockcn/${MOCKCN_SERVER_UUID}/images.json ]]; then
         echo "{\"${dataset_uuid}\": {}}" > /mockcn/${MOCKCN_SERVER_UUID}/images.json
     else
-        if [[ -z $(json -k /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
+        if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
             ## image doesn't exist, add it
 						json -e "this['${dataset_uuid}']={}" \
                 < /mockcn/${MOCKCN_SERVER_UUID}/images.json > /mockcn/${MOCKCN_SERVER_UUID}/images.json.new && \
                 mv /mockcn/${MOCKCN_SERVER_UUID}/images.json.new /mockcn/${MOCKCN_SERVER_UUID}/images.json
         fi
     fi
-elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t filesystem zones/" && ${caller} =~ "tasks/machine_create" ]]; then
-    dataset=${@: -1}
+elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/" && ${caller} =~ "tasks/machine_create" ]]; then
+    dataset=${@:-1}
     dataset_uuid=$(echo ${dataset} | cut -d'/' -f2-)
-    if [[ -z $(json -k /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
-        echo "cannot open '${dataset}': dataset does not exist" >&2
-        exit 1
-    elif [[ -n $(echo "${dataset}" | grep "partial$") ]]; then
+    if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
+        echo "1: saying ${dataset} - ${dataset_uuid} doesn't exist" >> ${log}
         echo "cannot open '${dataset}': dataset does not exist" >&2
         exit 1
     else
+        echo "2: saying ${dataset} - ${dataset_uuid} does exist" >> ${log}
+        printf "${dataset}\t193M\t37.5G\t193M\tfilesystem\t/${dataset}\n"
+    fi
+elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t filesystem zones/" && ${caller} =~ "tasks/machine_create" ]]; then
+    dataset=${@:-1}
+    dataset_uuid=$(echo ${dataset} | cut -d'/' -f2-)
+    if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
+        echo "3: saying ${dataset} - ${dataset_uuid} doesn't exist" >> ${log}
+        echo "cannot open '${dataset}': dataset does not exist" >&2
+        exit 1
+    elif [[ -n $(echo "${dataset}" | grep "partial$") ]]; then
+        echo "4: saying ${dataset} - ${dataset_uuid} doesn't exist" >> ${log}
+        echo "cannot open '${dataset}': dataset does not exist" >&2
+        exit 1
+    else
+        echo "5: saying ${dataset} - ${dataset_uuid} does exist" >> ${log}
         printf "${dataset}\t193M\t37.5G\t193M\tfilesystem\t/${dataset}\n"
     fi
 else
