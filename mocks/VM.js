@@ -171,9 +171,26 @@ function assertMockCnUuid()
     assert(process.env.MOCKCN_SERVER_UUID, 'missing MOCKCN_SERVER_UUID');
 }
 
+function getMockImageJSONFilename(uuid)
+{
+    return (path.join('/mockcn', process.env.MOCKCN_SERVER_UUID, 'images', uuid + '.json'));
+}
+
 function getMockVMJSONFilename(uuid)
 {
-    return (path.join('/zones', MOCKCN_SERVER_UUID, 'vms', uuid + '.json'));
+    return (path.join('/mockcn', process.env.MOCKCN_SERVER_UUID, 'vms', uuid + '.json'));
+}
+
+function getMockSysinfo()
+{
+    var data;
+    var filename = path.join('/mockcn', process.env.MOCKCN_SERVER_UUID, 'sysinfo.json');
+    var rawdata;
+
+    rawdata = fs.readFileSync(filename);
+    data = JSON.parse(rawdata.toString());
+
+    return data;
 }
 
 
@@ -748,38 +765,22 @@ function validateProperty(brand, prop, value, action, data, errors, log)
  */
 function validateImage(image, log, callback)
 {
-    var args;
-    var cmd = '/usr/sbin/imgadm';
+    var filename = getMockImageJSONFilename(image.uuid);
 
-    args = ['get', '-P', image.zpool, image.uuid];
-
-    /*
-     * The plan here is to have a /mockcn/CN/imgs/*.json dir and just
-     * load the data from the image.uuid there inoring the zpool.
-     * Probalby should be done in a imgadm mock.
-     */
-    throw new Error('UNIMPLEMENTED: validateImage');
-
-    // on any error we fail closed (assume the image does not exist)
-    traceExecFile(cmd, args, log, 'imgadm-get',
-        function (error, stdout, stderr) {
-
+    fs.readFile(filename, function (err, rawdata) {
         var data;
-        var e;
 
-        if (error) {
-            error.stdout = stdout;
-            error.stderr = stderr;
-            error.whatFailed = 'EEXECFILE';
-            log.error(error);
-            callback(error);
+        if (err) {
+            log.error({err: err}, 'FAILED TO READ: ' + filename);
+            callback(err);
             return;
         }
 
         try {
-            data = JSON.parse(stdout.toString());
-        } catch (err) {
-            data = {};
+            data = JSON.parse(rawdata.toString());
+        } catch (e) {
+            callback(e);
+            return;
         }
 
         if (data.hasOwnProperty('manifest')) {
@@ -1719,11 +1720,11 @@ function lookupConflicts(macs, ips, ipNics, vrids, log, callback) {
 }
 
 function lookupInvalidNicTags(nics, log, callback) {
-    var args, i;
-    var tracers_obj;
+    var err;
+    var sysinfo;
+    var tags = {};
 
     assert(log, 'no logger passed to lookupInvalidNicTags()');
-    throw new Error('UNIMPLEMENTED: lookupInvalidNicTags');
 
     if (process.env.EXPERIMENTAL_VMJS_TRACING) {
         tracers_obj = traceUntilCallback('lookup-invalid-nictags', log,
@@ -1732,45 +1733,37 @@ function lookupInvalidNicTags(nics, log, callback) {
         log = tracers_obj.log;
     }
 
+    sysinfo = getMockSysinfo();
+    Object.keys(sysinfo['Network Interfaces']).forEach(function (iface) {
+        if (sysinfo['Network Interfaces'][iface].hasOwnProperty('NIC Names')) {
+            sysinfo['Network Interfaces'][iface]['NIC Names'].forEach(function (tag) {
+                tags[tag] = true;
+            });
+        }
+    });
+
     if (!nics || nics.length === 0) {
         callback();
         return;
     }
 
-    args = ['exists', '-l'];
+    err = '';
     for (i = 0; i < nics.length; i++) {
-        if (!('nic_tag' in nics[i])) {
-            continue;
-        }
-        args.push(nics[i]['nic_tag']);
-    }
-
-    /* If we found no tags, there's nothing for us to validate */
-    if (args.length === 2) {
-        callback();
-        return;
-    }
-
-    execFile('/usr/bin/nictagadm', args, function (error, stdout, stderr) {
-        var err, tags;
-        if (error) {
-            tags = stderr.toString().split('\n');
-            err = '';
-            for (i = 0; i < tags.length; i++) {
-                if (tags[i] === '') {
-                    continue;
-                }
-                if (err !== '') {
-                    err = err + '\n';
-                }
-                err = err + 'Invalid nic tag "' + tags[i] + '"';
+        if (!tags.hasOwnProperty(nics[i]['nic_tag'])) {
+            if (err !== '') {
+                err = err + '\n';
             }
-            callback(new Error(err));
-            return;
+            err = err + 'Invalid nic tag "' + nics[i]['nic_tag'] + '"';
         }
-        callback();
+    }
+
+    if (err.length > 0) {
+        callback(new Error(err));
         return;
-    });
+    }
+
+    callback();
+    return;
 }
 
 function lookupInvalidNicTagMTUs(nics, log, callback) {
@@ -1783,86 +1776,9 @@ function lookupInvalidNicTagMTUs(nics, log, callback) {
 
     assert(log, 'no logger passed to lookupInvalidNicTagMTUs()');
 
-    throw new Error('UNIMPLEMENTED: lookupInvalidNicTagMTUs');
-
-    if (!nics || nics.length === 0) {
-        callback();
-        return;
-    }
-
-    // Go through all of the nic tags and find the minimum MTU for a nic
-    // on that tag, so we can validate that this is not below the MTU for
-    // a given tag type below.
-    for (i = 0; i < nics.length; i++) {
-        nic = nics[i];
-        if (nic.hasOwnProperty('nic_tag')) {
-            foundTag = true;
-
-            if (nic.hasOwnProperty('mtu')) {
-                if (!mtus.hasOwnProperty(nic.nic_tag)) {
-                    idx[nic.nic_tag] = i;
-                    mtus[nic.nic_tag] = nic.mtu;
-                    macs[nic.nic_tag] = nic.mac;
-                }
-
-                if (nic.mtu < mtus[nic.nic_tag]) {
-                    idx[nic.nic_tag] = i;
-                    mtus[nic.nic_tag] = nic.mtu;
-                    macs[nic.nic_tag] = nic.mac;
-                }
-            }
-        }
-    }
-
-    if (!foundTag) {
-        log.debug({ nics: nics }, 'No nic tags found: not validating');
-        callback();
-        return;
-    }
-
-    execFile('/usr/bin/nictagadm', args, function (error, stdout, stderr) {
-        var err = '';
-        var fields, lines, tag, type;
-
-        if (error) {
-            log.error({ err: err, stdout: stdout, stderr: stderr },
-                'Error running nictagadm');
-            callback(new Error('Error validating nic tags: ' + error.message));
-            return;
-        }
-
-        lines = stdout.toString().split('\n');
-        for (i = 0; i < lines.length; i++) {
-            fields = lines[i].split(',');
-            tag = fields[0];
-            type = fields[3];
-
-            if (tag === '-') {
-                log.warn({ line: lines[i], stdout: stdout, stderr: stderr },
-                    'Invalid tag found in nictagadm');
-                continue;
-            }
-
-            if (mtus.hasOwnProperty(tag) && type === 'normal'
-                    && mtus[tag] < 1500) {
-                if (err !== '') {
-                    err = err + '\n';
-                }
-
-                err = err + util.format(
-                    'nic %d (%s): MTU is below the supported MTU (1500) '
-                    + 'of nic tag "%s"', idx[tag], macs[tag], tag);
-            }
-        }
-
-        if (err.length !== 0) {
-            callback(new Error(err));
-            return;
-        }
-
-        callback();
-        return;
-    });
+    // any MTU is fine for now
+    callback();
+    return;
 }
 
 function validateNicTags(nics, log, callback) {
@@ -7171,111 +7087,6 @@ function getDatasetMountpoint(dataset, log, callback)
     });
 }
 
-// TODO: pull data out of the massive zfs list we pulled earlier
-function checkDatasetProvisionable(payload, log, callback)
-{
-    var dataset;
-    var tracers_obj;
-
-    assert(log, 'no logger passed to checkDatasetProvisionable()');
-
-    if (process.env.EXPERIMENTAL_VMJS_TRACING) {
-        tracers_obj = traceUntilCallback('check-dataset-provisionable', log,
-            callback);
-        callback = tracers_obj.callback;
-        log = tracers_obj.log;
-    }
-
-    if (BRAND_OPTIONS[payload.brand].features.var_svc_provisioning) {
-        // when the brand always supports /var/svc/provisioning we don't have to
-        // worry about the dataset not supporting it.
-        callback(true);
-        return;
-    }
-
-    if (!payload.hasOwnProperty('zpool')
-        || !payload.hasOwnProperty('image_uuid')) {
-
-        log.error('missing properties required to find dataset: '
-            + JSON.stringify(payload));
-        callback(false);
-        return;
-    }
-
-    dataset = payload.zpool + '/' + payload.image_uuid;
-
-    getDatasetMountpoint(dataset, log, function (dataset_err, mountpoint) {
-        if (dataset_err) {
-            log.error('unable to find mount point for ' + dataset);
-            callback(false);
-            return;
-        }
-
-        if (BRAND_OPTIONS[payload.brand].features.type === 'LX') {
-            log.warn('XXX temporary hack for lx, assume image supports '
-                + '/var/svc/provisioning');
-            callback(true);
-            return;
-        }
-
-        getZoneinitJSON(dataset, log, function (zoneinit_err, zoneinit) {
-            var filename_1_6_x;
-            var filename_1_8_x;
-
-            if (zoneinit_err) {
-                log.error(zoneinit_err, 'getZoneinitJSON() failed, assuming '
-                    + 'not provisionable.');
-                callback(false);
-                return;
-            } else if (!zoneinit) {
-                log.debug('no data from getZoneinitJSON(), using {}');
-                zoneinit = {};
-            }
-
-            if (zoneinit.hasOwnProperty('features')) {
-                if (zoneinit.features.var_svc_provisioning) {
-                    log.info('zoneinit.features.var_svc_provisioning is '
-                        + 'set.');
-                    callback(true);
-                    return;
-                }
-                // we have features but not var_svc_provisioning === true means
-                // we can't provision. Fall through and return false.
-            } else {
-                // Didn't load zoneinit features, so check for datasets that
-                // have // 04-mdata.sh.  For 1.6.x and earlier datasets this was
-                // in /root but in 1.8.0 and 1.8.1 it is in /var/zoneinit.  For
-                // 1.8.2 and later we'll not get here as the zoneinit.json will
-                // exist and we'll use that.
-                filename_1_6_x = path.join(mountpoint, 'root',
-                    '/root/zoneinit.d/04-mdata.sh');
-                filename_1_8_x = path.join(mountpoint, 'root',
-                    '/var/zoneinit/includes/04-mdata.sh');
-
-                if (fs.existsSync(filename_1_6_x)) {
-                    log.info(filename_1_6_x + ' exists');
-                    callback(true);
-                    return;
-                } else {
-                    log.debug(filename_1_6_x + ' does not exist');
-                    if (fs.existsSync(filename_1_8_x)) {
-                        log.info(filename_1_8_x + ' exists');
-                        callback(true);
-                        return;
-                    } else {
-                        log.debug(filename_1_8_x + ' does not exist');
-                        // this was our last chance.
-                        // Fall through and return false.
-                    }
-                }
-            }
-
-            callback(false);
-            return;
-        });
-    });
-}
-
 // create and install a 'joyent' or 'kvm' brand zone.
 function createZone(payload, log, callback)
 {
@@ -9127,8 +8938,6 @@ exports.create = function (payload, options, callback)
     var log;
     var tracers_obj;
 
-    throw new Error('UNIMPLEMENTED: create');
-
     // options is optional
     if (arguments.length === 2) {
         callback = arguments[1];
@@ -9182,18 +8991,9 @@ exports.create = function (payload, options, callback)
                 cb(err);
             });
         }, function (cb) {
-            checkDatasetProvisionable(payload, log, function (provisionable) {
-                if (!provisionable) {
-                    log.error('checkDatasetProvisionable() says dataset is '
-                        + 'unprovisionable');
-                    cb(new Error('provisioning dataset ' + payload.image_uuid
-                        + ' with brand ' + payload.brand
-                        + ' is not supported'));
-                    return;
-                }
-                cb();
-            });
-        }, function (cb) {
+
+            throw new Error('UNIMPLEMENTED: create ' + JSON.stringify(payload));
+
             if (BRAND_OPTIONS[payload.brand].features.type === 'KVM') {
                 createVM(payload, log, function (error, result) {
                     if (error) {
