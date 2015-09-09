@@ -31,7 +31,7 @@ function createDataset()
     fi
 
     echo "creating ${DATASET}" >>${log}
-    (curl -4 --connect-timeout 10 -sS -H accept:application/json http://${IMGAPI}/images/${DATASET} | json) \
+    echo "{}" | json -e "this.manifest=$(curl -4 --connect-timeout 10 -sS -H accept:application/json http://${IMGAPI}/images/${DATASET} | json)" \
         > /mockcn/${MOCKCN_SERVER_UUID}/images/${DATASET}.json.new \
         && mv /mockcn/${MOCKCN_SERVER_UUID}/images/${DATASET}.json.new /mockcn/${MOCKCN_SERVER_UUID}/images/${DATASET}.json
 }
