@@ -26,24 +26,14 @@ function createDataset()
     DATASET=$1
     IMGAPI="imgapi.$(mdata-get sdc:datacenter_name).$(mdata-get sdc:dns_domain)"
 
+    if [[ ! -d /mockcn/${MOCKCN_SERVER_UUID}/images ]]; then
+        mkdir -p /mockcn/${MOCKCN_SERVER_UUID}/images
+    fi
+
     echo "creating ${DATASET}" >>${log}
-
-    JSON=$(curl -4 --connect-timeout 10 -sS -H accept:application/json http://${IMGAPI}/images/${DATASET} | json -o json-0)
-
-    echo "JSON[${DATASET}] = ${JSON}" >>${log}
-
-    if [[ -z ${JSON} ]]; then
-        echo "cannot create '${dataset}': dataset does not exist" >&2
-        exit 1
-    fi
-
-    if [[ ! -f /mockcn/${MOCKCN_SERVER_UUID}/images.json ]]; then
-        echo "{}" > /mockcn/${MOCKCN_SERVER_UUID}/images.json
-    fi
-
-    json -e "this['${DATASET}']='${JSON}'" < /mockcn/${MOCKCN_SERVER_UUID}/images.json \
-        > /mockcn/${MOCKCN_SERVER_UUID}/images.json.new \
-        && mv /mockcn/${MOCKCN_SERVER_UUID}/images.json.new /mockcn/${MOCKCN_SERVER_UUID}/images.json
+    (curl -4 --connect-timeout 10 -sS -H accept:application/json http://${IMGAPI}/images/${DATASET} | json) \
+        > /mockcn/${MOCKCN_SERVER_UUID}/images/${DATASET}.json.new \
+        && mv /mockcn/${MOCKCN_SERVER_UUID}/images/${DATASET}.json.new /mockcn/${MOCKCN_SERVER_UUID}/images/${DATASET}.json
 }
 
 if [[ "$*" == "list -H -p -t filesystem -o mountpoint,name,quota,type,zoned" ]]; then
@@ -89,18 +79,13 @@ elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/"
     dataset_uuid=$(echo ${dataset} | cut -d'/' -f2-)
     printf "${dataset}\t193M\t37.5G\t193M\tfilesystem\t/${dataset}\n"
     ## Also add it here to the CN's list if it
-    if [[ ! -f /mockcn/${MOCKCN_SERVER_UUID}/images.json ]]; then
+    if [[ ! -f /mockcn/${MOCKCN_SERVER_UUID}/images/${dataset_uuid}.json ]]; then
         createDataset ${dataset_uuid}
-    else
-        if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
-            ## image doesn't exist, add it
-            createDataset ${dataset_uuid}
-        fi
     fi
 elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/" && ${caller} =~ "tasks/machine_create" ]]; then
     dataset=${@: -1}
     dataset_uuid=$(echo ${dataset} | cut -d'/' -f2-)
-    if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
+    if [[ ! -f /mockcn/${MOCKCN_SERVER_UUID}/images/${dataset_uuid}.json ]]; then
         echo "1: saying ${dataset} - ${dataset_uuid} doesn't exist" >> ${log}
         echo "cannot open '${dataset}': dataset does not exist" >&2
         exit 1
@@ -111,7 +96,7 @@ elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/"
 elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t filesystem zones/" && ${caller} =~ "tasks/machine_create" ]]; then
     dataset=${@: -1}
     dataset_uuid=$(echo ${dataset} | cut -d'/' -f2-)
-    if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
+    if [[ ! -f /mockcn/${MOCKCN_SERVER_UUID}/images/${dataset_uuid}.json ]]; then
         echo "3: saying ${dataset} - ${dataset_uuid} doesn't exist" >> ${log}
         echo "cannot open '${dataset}': dataset does not exist" >&2
         exit 1
