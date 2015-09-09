@@ -82,7 +82,7 @@ pkg: all
 	cp mocks/* $(MOCKCLOUD_PKG_DIR)/mocks/
 	cp src/fix-agents.sh $(MOCKCLOUD_PKG_DIR)/bin/fix-agents.sh
 	cp src/init.sh $(MOCKCLOUD_PKG_DIR)/bin/
-	cp src/mock-agent.js $(MOCKCLOUD_PKG_DIR)/bin/mock-agent
+	cp src/mock-agent.js $(MOCKCLOUD_PKG_DIR)/bin/mock-agent.js
 	cp lib/*.json $(MOCKCLOUD_PKG_DIR)/lib/
 	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
 	# Clean up some dev / build bits
