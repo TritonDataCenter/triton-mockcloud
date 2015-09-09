@@ -21,6 +21,31 @@ function unsupported()
     exit 1
 }
 
+function createDataset()
+{
+    DATASET=$1
+    IMGAPI="imgapi.$(mdata-get sdc:datacenter_name).$(mdata-get sdc:dns_domain)"
+
+    echo "creating ${DATASET}" >>${log}
+
+    JSON=$(curl -4 --connect-timeout 10 -sS -H accept:application/json http://${IMGAPI}/images/${DATASET} | json -o json-0)
+
+    echo "JSON[${DATASET}] = ${JSON}" >>${log}
+
+    if [[ -z ${JSON} ]]; then
+        echo "cannot create '${dataset}': dataset does not exist" >&2
+        exit 1
+    fi
+
+    if [[ ! -f /mockcn/${MOCKCN_SERVER_UUID}/images.json ]]; then
+        echo "{}" > /mockcn/${MOCKCN_SERVER_UUID}/images.json
+    fi
+
+    json -e "this['${DATASET}']='${JSON}'" < /mockcn/${MOCKCN_SERVER_UUID}/images.json \
+        > /mockcn/${MOCKCN_SERVER_UUID}/images.json.new \
+        && mv /mockcn/${MOCKCN_SERVER_UUID}/images.json.new /mockcn/${MOCKCN_SERVER_UUID}/images.json
+}
+
 if [[ "$*" == "list -H -p -t filesystem -o mountpoint,name,quota,type,zoned" ]]; then
     # /zones/0b4bb0bb-2e40-4342-9bbc-d838eaf030f2 zones/0b4bb0bb-2e40-4342-9bbc-d838eaf030f2  26843545600 filesystem  off
     echo "/zones  zones 0 filesystem  off"
@@ -65,13 +90,11 @@ elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/"
     printf "${dataset}\t193M\t37.5G\t193M\tfilesystem\t/${dataset}\n"
     ## Also add it here to the CN's list if it
     if [[ ! -f /mockcn/${MOCKCN_SERVER_UUID}/images.json ]]; then
-        echo "{\"${dataset_uuid}\": {}}" > /mockcn/${MOCKCN_SERVER_UUID}/images.json
+        createDataset ${dataset_uuid}
     else
         if [[ -z $(json -ka < /mockcn/${MOCKCN_SERVER_UUID}/images.json | grep ${dataset_uuid}) ]]; then
             ## image doesn't exist, add it
-            json -e "this['${dataset_uuid}']={}" \
-                < /mockcn/${MOCKCN_SERVER_UUID}/images.json > /mockcn/${MOCKCN_SERVER_UUID}/images.json.new && \
-                mv /mockcn/${MOCKCN_SERVER_UUID}/images.json.new /mockcn/${MOCKCN_SERVER_UUID}/images.json
+            createDataset ${dataset_uuid}
         fi
     fi
 elif [[ "$*" =~ "list -H -o name,used,avail,refer,type,mountpoint -t all zones/" && ${caller} =~ "tasks/machine_create" ]]; then
