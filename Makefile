@@ -12,7 +12,7 @@ TOP := $(shell pwd)
 #
 # Files
 #
-JS_FILES	:= $(shell ls *.js) $(shell find src lib -name '*.js')
+JS_FILES	:= $(shell ls *.js) $(shell find src bin lib test -name '*.js')
 JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
@@ -53,6 +53,7 @@ NPM_ENV =		SDC_AGENT_SKIP_LIFECYCLE=yes \
 			MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFMERGE=/bin/true'
 RUN_NPM_INSTALL =	$(NPM_ENV) $(NPM) install
 
+TAPE	:= ./node_modules/.bin/tape
 
 #
 # Repo-specific targets
@@ -63,6 +64,11 @@ all:
 .PHONY: test
 test:
 	@echo "Success!"
+
+.PHONY: test-coal
+test-coal:
+#	./tools/rsync-to coal
+	ssh root@10.99.99.7 'LOG_LEVEL=$(LOG_LEVEL) /zones/$$(vmadm lookup -1 alias=mockcloud0)/root/opt/smartdc/mockcloud/test/runtests $(TEST_ARGS)'
 
 #
 # Packaging targets
@@ -80,9 +86,7 @@ pkg: all
 	cp -PR smf \
 		$(MOCKCLOUD_PKG_DIR)
 	cp mocks/* $(MOCKCLOUD_PKG_DIR)/mocks/
-	cp src/fix-agents.sh $(MOCKCLOUD_PKG_DIR)/bin/fix-agents.sh
-	cp src/init.sh $(MOCKCLOUD_PKG_DIR)/bin/
-	cp src/mock-agent.js $(MOCKCLOUD_PKG_DIR)/bin/mock-agent.js
+	cp bin/* $(MOCKCLOUD_PKG_DIR)/bin/
 	cp lib/*.json $(MOCKCLOUD_PKG_DIR)/lib/
 	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
 	# Clean up some dev / build bits
