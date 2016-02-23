@@ -46,12 +46,12 @@ To list possible profiles for mockcloud compute node creation:
 
 To create a compute node:
 
-    /usr/node/bin/node ./bin/mockcloudadm server create "PowerEdge C2101"
+    /usr/node/bin/node ./bin/mockcloudadm server create "PowerEdge C2100"
 
 
 To create multiple compute nodes, use the `--count` option:
 
-    /usr/node/bin/node ./bin/mockcloudadm server create --count 5 "PowerEdge C2101"
+    /usr/node/bin/node ./bin/mockcloudadm server create --count 5 "PowerEdge C2100"
 
 
 That server may then be setup as one would any other server (now from the global zone):
@@ -66,7 +66,7 @@ provisioning.
 # Tests
 
 The tests must be run from the global-zone. To run the tests against coal
-(assuming a `coal` entry in your ssh config`:
+(assuming a `coal` entry in your ssh config`):
 
     make test-coal
 
