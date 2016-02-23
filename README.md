@@ -41,17 +41,17 @@ Within the mockcloud zone, one may also use the `mockcloudadm` tool:
 
 To list possible profiles for mockcloud compute node creation:
 
-    /usr/node/bin/node /usr/node/bin/node ./bin/mockcloudadm server list-profiles
+    /usr/node/bin/node ./bin/mockcloudadm server list-profiles
 
 
 To create a compute node:
 
-    /usr/node/bin/node /usr/node/bin/node ./bin/mockcloudadm server create "PowerEdge C2101"
+    /usr/node/bin/node ./bin/mockcloudadm server create "PowerEdge C2101"
 
 
 To create multiple compute nodes, use the `--count` option:
 
-    /usr/node/bin/node /usr/node/bin/node ./bin/mockcloudadm server create --count 5 "PowerEdge C2101"
+    /usr/node/bin/node ./bin/mockcloudadm server create --count 5 "PowerEdge C2101"
 
 
 That server may then be setup as one would any other server (now from the global zone):
