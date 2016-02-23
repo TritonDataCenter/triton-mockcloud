@@ -28,18 +28,40 @@ Within the mockcloud zone, run the following command to create a new server.
     curl -v -X POST -d"$(json 'PowerEdge C2100' < lib/canned_profiles.json)" \
         -H 'Content-Type: application/json' http://0.0.0.0/servers
 
+
 The server can be removed from mockcloud via:
 
     curl -v -X DELETE http://0.0.0.0/servers/de305d54-75b4-431b-adb2-eb6b9e546014
 
 
-That server may then be setup as one would any other server:
+Within the mockcloud zone, one may also use the `mockcloudadm` tool:
+
+    cd /opt/smartdc/mockcloud
+
+
+To list possible profiles for mockcloud compute node creation:
+
+    /usr/node/bin/node /usr/node/bin/node ./bin/mockcloudadm server list-profiles
+
+
+To create a compute node:
+
+    /usr/node/bin/node /usr/node/bin/node ./bin/mockcloudadm server create "PowerEdge C2101"
+
+
+To create multiple compute nodes, use the `--count` option:
+
+    /usr/node/bin/node /usr/node/bin/node ./bin/mockcloudadm server create --count 5 "PowerEdge C2101"
+
+
+That server may then be setup as one would any other server (now from the global zone):
 
     sdc-server setup de305d54-75b4-431b-adb2-eb6b9e546014
 
 
 At this point it will be possible to use this server as a destination for
 provisioning.
+
 
 # Tests
 

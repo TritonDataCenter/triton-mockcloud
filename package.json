@@ -5,15 +5,18 @@
   "author": "Joyent (joyent.com)",
   "private": true,
   "dependencies": {
+    "assert-plus": "^1.0.0",
     "bunyan": "1.4.0",
     "cmdln": "^3.5.3",
     "cn-agent": "git+https://github.com/joyent/sdc-cn-agent.git#master",
     "mockery": "1.4.0",
     "node-uuid": "1.4.3",
     "restify": "4.0.0",
+    "tabula": "^1.7.0",
     "tape": "^4.4.0",
     "ur-agent": "git+https://github.com/joyent/sdc-ur-agent.git#555bbf161fa908272b23ca79285d39b89abaefa1",
-    "vasync": "1.6.3"
+    "vasync": "^1.6.3",
+    "verror": "^1.6.1"
   },
   "engines": {
     "node": ">=0.10"

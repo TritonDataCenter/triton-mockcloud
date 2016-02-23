@@ -94,8 +94,7 @@ test('create a server', function (tt) {
                 var found = _servers.filter(function (server) {
                     return uuids.indexOf(server.uuid) === -1;
                 });
-                tt.comment(util.inspect(found, '  ', 2));
-                tt.equal(found.length, 1);
+                tt.equal(found.length, 1, 'found one new server');
                 next();
             });
         }
