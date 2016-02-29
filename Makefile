@@ -87,7 +87,7 @@ pkg: all
 		$(MOCKCLOUD_PKG_DIR)
 	cp mocks/* $(MOCKCLOUD_PKG_DIR)/mocks/
 	cp bin/* $(MOCKCLOUD_PKG_DIR)/bin/
-	cp lib/* $(MOCKCLOUD_PKG_DIR)/lib/
+	cp -r lib/* $(MOCKCLOUD_PKG_DIR)/lib/
 	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
 	# Clean up some dev / build bits
 	find $(PKG_DIR) -name "*.pyc" | xargs rm -f
