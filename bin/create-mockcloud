@@ -95,6 +95,7 @@ vmadm create <<EOF
  "image_uuid": "${IMAGE_UUID}",
  "owner_uuid": "${OWNER_UUID}",
  "ram": 1536,
+ "cpu_cap": 300,
  "archive_on_delete": true,
  "alias": "${zone_alias}",
  "resolvers": "${CONFIG_binder_admin_ips}",
@@ -111,4 +112,3 @@ vmadm create <<EOF
  ]
 }
 EOF
-
