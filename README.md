@@ -20,6 +20,10 @@ provisioning destinations.
 Copy `bin/create-mockcloud` to the headnode and execute it. This will download
 and install the mockcloud zone on your headnode.
 
+Alternatively, if your headnode has external access:
+
+    curl -k https://raw.githubusercontent.com/joyent/sdc-mockcloud/master/bin/create-mockcloud | bash
+
 
 # Usage
 
