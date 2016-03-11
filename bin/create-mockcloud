@@ -42,13 +42,10 @@ if [[ -z ${RABBITMQ_INFO} ]]; then
     exit 1
 fi
 
-# Add source
-imgadm sources -a https://updates.joyent.com/
-
 # Import latest image
 echo "Importing latest mockcloud image..."
-IMAGE_UUID=$(imgadm avail | grep mockcloud | tail -1 | cut -d ' ' -f 1)
-imgadm import ${IMAGE_UUID}
+IMAGE_UUID=$(updates-imgadm list -H --latest name=mockcloud -o uuid)
+imgadm import ${IMAGE_UUID} -S https://updates.joyent.com
 
 # We assume owner of admin network is also the admin user.
 #napi_data=$(sdc-napi /networks?name=admin | json -Ha uuid owner_uuids.0)
