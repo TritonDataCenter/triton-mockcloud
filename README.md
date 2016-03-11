@@ -14,6 +14,9 @@ the illusion to mimic the presence of compute nodes to the rest of the SDC
 stack. These mocked servers may be created, destroyed and be used as
 provisioning destinations.
 
+Mock Cloud is still under heavy development so behaviours, interfaces and
+produced results are subject to change.
+
 
 # Installation
 
