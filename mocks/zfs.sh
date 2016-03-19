@@ -67,6 +67,14 @@ elif [[ "$*" == "get -Hp -o name,property,value used,available zones" ]]; then
     avail=$((${total} - ${used}))
     echo "zones	used	${used}"
     echo "zones	available	${avail}"
+elif [[ "$*" == "zfs get -Hp -o value used" ]]; then
+    used=$(json usage < /mockcn/${MOCKCN_SERVER_UUID}/pool.json)
+    echo "zones	used	${used}"
+elif [[ "$*" == "zfs get -Hp -o value available" ]]; then
+    total=$(json capacity < /mockcn/${MOCKCN_SERVER_UUID}/pool.json)
+    used=$(json usage < /mockcn/${MOCKCN_SERVER_UUID}/pool.json)
+    avail=$((${total} - ${used}))
+    echo "zones available ${avail}"
 #
 # During a provision we first check image_ensure_present to ensure the image exists, if not
 # We'll pull it with imgadm. Then in machine_create we do the same check. Then we also check
