@@ -12,6 +12,7 @@ TOP := $(shell pwd)
 #
 # Files
 #
+REPO_ROOT	= $(shell pwd)
 JS_FILES	:= $(shell ls *.js) $(shell find src bin lib test -name '*.js')
 JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
@@ -87,7 +88,7 @@ pkg: all
 		$(MOCKCLOUD_PKG_DIR)
 	cp mocks/* $(MOCKCLOUD_PKG_DIR)/mocks/
 	cp bin/* $(MOCKCLOUD_PKG_DIR)/bin/
-	cp -r build $(MOCKCLOUD_PKG_DIR)/
+	cp -r $(REPO_ROOT)/build $(MOCKCLOUD_PKG_DIR)/
 	cp -r lib/* $(MOCKCLOUD_PKG_DIR)/lib/
 	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
 	# Clean up some dev / build bits
