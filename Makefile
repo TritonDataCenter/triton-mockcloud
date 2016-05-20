@@ -24,7 +24,7 @@ REPO_MODULES := src/node-pack
 JSSTYLE_FLAGS = -o indent=4,doxygen,unparenthesized-return=0
 
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_VERSION=v0.12.10
+	NODE_PREBUILT_VERSION=v1.12.14
 	NODE_PREBUILT_TAG=zone
 endif
 
@@ -87,6 +87,7 @@ pkg: all
 		$(MOCKCLOUD_PKG_DIR)
 	cp mocks/* $(MOCKCLOUD_PKG_DIR)/mocks/
 	cp bin/* $(MOCKCLOUD_PKG_DIR)/bin/
+	cp -r build $(MOCKCLOUD_PKG_DIR)/
 	cp -r lib/* $(MOCKCLOUD_PKG_DIR)/lib/
 	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
 	# Clean up some dev / build bits
