@@ -75,7 +75,7 @@ test-coal:
 # Packaging targets
 #
 .PHONY: pkg
-pkg: all
+pkg: $(NODE_EXEC) all
 	rm -rf $(PKG_DIR)
 	mkdir -p $(MOCKCLOUD_PKG_DIR)
 	mkdir -p $(MOCKCLOUD_PKG_DIR)/node_modules
