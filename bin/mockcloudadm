@@ -1,12 +1,18 @@
-#!/usr/bin/env node
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
+#!/bin/bash
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
 
-/*
- * Copyright (c) 2016, Joyent, Inc.
- */
+#
+# Copyright (c) 2015, Joyent, Inc.
+#
 
-require('../lib/mockcloudadm/cli').main();
+TOP=$(cd $(dirname $0)/../; pwd)
+if [[ -x "$TOP/build/node/bin/node" ]]; then
+    # Dev layout.
+    $TOP/build/node/bin/node $TOP/lib/mockcloudadm/index.js  "$@"
+else
+    /opt/smartdc/mockcloud/node/bin/node /opt/smartdc/mockcloud/lib/mockcloudadm/index.js "$@"
+fi
