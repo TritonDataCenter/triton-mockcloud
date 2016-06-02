@@ -15,6 +15,7 @@
     "tabula": "^1.7.0",
     "tape": "^4.4.0",
     "ur-agent": "git+https://github.com/joyent/sdc-ur-agent.git#555bbf161fa908272b23ca79285d39b89abaefa1",
+    "sdc-clients": "git+https://github.com/joyent/node-sdc-clients.git#8e52debc25b3239b62772076cb2c4ef70fb2113d",
     "vasync": "^1.6.3",
     "verror": "^1.6.1"
   },
