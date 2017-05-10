@@ -25,7 +25,7 @@ REPO_MODULES := src/node-pack
 JSSTYLE_FLAGS = -o indent=4,doxygen,unparenthesized-return=0
 
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_VERSION=v0.12.14
+	NODE_PREBUILT_VERSION=v0.12.17
 	NODE_PREBUILT_TAG=zone
 endif
 
