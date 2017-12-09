@@ -104,7 +104,7 @@ pkg: $(NODE_EXEC) all
 release: $(RELEASE_TARBALL)
 
 $(RELEASE_TARBALL): pkg
-	(cd $(PKG_DIR); tar -jcf $(TOP)/$(RELEASE_TARBALL) root)
+	(cd $(PKG_DIR); $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root)
 
 publish:
 	@if [[ -z "$(BITS_DIR)" ]]; then \
