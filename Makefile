@@ -18,7 +18,7 @@ ifeq ($(shell uname -s),SunOS)
 	# triton-origin image (multiarch@18.1.0 is being explored now).
 	NODE_PREBUILT_VERSION=v6.14.3
 	NODE_PREBUILT_TAG=zone
-        # minimal-multiarch 18.1.0
+	# minimal-multiarch 18.1.0
 	NODE_PREBUILT_IMAGE = 1ad363ec-3b83-11e8-8521-2f68a4a34d5d
 endif
 
@@ -62,9 +62,14 @@ release: all
 		$(TOP)/lib \
 		$(TOP)/node_modules \
 		$(TOP)/package.json \
+		$(TOP)/smf \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)
-	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
+	# setup for mockcloud-setup SMF to be imported on boot
+	mkdir -p $(RELSTAGEDIR)/root/lib/svc/manifest/site
+	ln -s /opt/triton/$(NAME)/smf/manifests/mockcloud-setup.xml \
+		$(RELSTAGEDIR)/root/lib/svc/manifest/site/mockcloud-setup.xml
 	# sdcnode
+	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
 	cp -PR \
 		$(TOP)/build/node \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
