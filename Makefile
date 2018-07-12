@@ -13,11 +13,6 @@ CLEAN_FILES += ./node_modules
 # CN itself. We do *not* want to run these scripts for the `npm install` here.
 NPM_ENV = SDC_AGENT_SKIP_LIFECYCLE=yes MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFMERGE=/bin/true'
 
-#XXX
-#REPO_ROOT	= $(shell pwd)
-#PKG_DIR = $(BUILD)/pkg
-#MOCKCLOUD_PKG_DIR = $(PKG_DIR)/root/opt/smartdc/mockcloud
-
 ifeq ($(shell uname -s),SunOS)
 	# sdcnode: use a recent node version (v6 for now) and recent
 	# triton-origin image (multiarch@18.1.0 is being explored now).
