@@ -1,0 +1,31 @@
+{
+  "name": "mockcloud",
+  "description": "an image to mock out N TritonDC compute nodes",
+  "version": "2.0.0",
+  "author": "Joyent (joyent.com)",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joyent/sdc-mockcloud.git"
+  },
+  "dependencies": {
+    "assert-plus": "^1.0.0",
+    "bunyan": "^1.8.12",
+    "cn-agent": "git+https://github.com/joyent/sdc-cn-agent.git#master",
+    "sdc-clients": "^11.3.0",
+    "uuid": "^3.2.1",
+    "vasync": "^2.2.0",
+    "verror": "^1.10.0"
+  },
+  "devDependencies": {
+    "eslint": "4.13.1",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-joyent": "~2.0.0",
+    "eslint-plugin-prettier": "^2.6.0",
+    "prettier": "^1.11.1"
+  },
+  "engines": {
+    "node": ">=4.x"
+  },
+  "license": "MPL-2.0"
+}

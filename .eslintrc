@@ -1,0 +1,24 @@
+{
+    "plugins": [
+        "joyent",
+        "prettier"
+    ],
+    "extends": [
+        "eslint:recommended",
+        "plugin:joyent/style",
+        "plugin:joyent/lint",
+        "plugin:prettier/recommended"
+    ],
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "sourceType": "script",
+        "ecmaFeatures": {
+        }
+    },
+    "env": {
+        "node": true
+    },
+    "rules": {
+        "curly": ["error", "all"]
+    }
+}
