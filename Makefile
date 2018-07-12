@@ -7,15 +7,14 @@ NAME=mockcloud
 JS_FILES := $(shell find lib -name '*.js')
 ESLINT_FILES := $(JS_FILES)
 CLEAN_FILES += ./node_modules
-RELEASE_TARBALL=$(NAME)-pkg-$(STAMP).tar.bz2
 
+# We are including Triton agents as deps. Some of them include npm postinstall
+# scripts for use when installing those agents via `apm install` on a TritonDC
+# CN itself. We do *not* want to run these scripts for the `npm install` here.
+NPM_ENV = SDC_AGENT_SKIP_LIFECYCLE=yes MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFMERGE=/bin/true'
 
 #XXX
 #REPO_ROOT	= $(shell pwd)
-#JS_FILES	:= $(shell find src bin lib test -name '*.js')
-#JSL_CONF_NODE	 = tools/jsl.node.conf
-#JSL_FILES_NODE   = $(JS_FILES)
-#JSSTYLE_FILES	 = $(JS_FILES)
 #PKG_DIR = $(BUILD)/pkg
 #MOCKCLOUD_PKG_DIR = $(PKG_DIR)/root/opt/smartdc/mockcloud
 
@@ -42,17 +41,8 @@ else
 endif
 include ./tools/mk/Makefile.smf.defs
 
-#
-# Due to the unfortunate nature of npm, the Node Package Manager, there appears
-# to be no way to assemble our dependencies without running the lifecycle
-# scripts.  These lifecycle scripts should not be run except in the context of
-# an agent installation or uninstallation, so we provide a magic environment
-# varible to disable them here.
-#
-#XXX needed?
-NPM_ENV =		SDC_AGENT_SKIP_LIFECYCLE=yes \
-			MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFMERGE=/bin/true'
-#RUN_NPM_INSTALL =	$(NPM_ENV) $(NPM) install
+RELEASE_TARBALL = $(NAME)-pkg-$(STAMP).tar.bz2
+RELSTAGEDIR := /tmp/$(STAMP)
 
 
 #
@@ -69,34 +59,29 @@ git-hooks:
 fmt:: | $(ESLINT)
 	$(ESLINT) --fix $(ESLINT_FILES)
 
-
 .PHONY: release
-release: $(RELEASE_TARBALL)
-
-$(RELEASE_TARBALL):
-	rm -rf $(PKG_DIR)
-	mkdir -p $(MOCKCLOUD_PKG_DIR)
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/node_modules
-	cp package.json $(MOCKCLOUD_PKG_DIR)/
-	(cd $(MOCKCLOUD_PKG_DIR) && $(NPM_ENV) npm install)
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/bin
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/lib
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/mocks
-	cp -PR smf \
-		$(MOCKCLOUD_PKG_DIR)
-	cp mocks/* $(MOCKCLOUD_PKG_DIR)/mocks/
-	cp bin/* $(MOCKCLOUD_PKG_DIR)/bin/
-	cp -r $(REPO_ROOT)/build/node $(MOCKCLOUD_PKG_DIR)/node
-	cp -r lib/* $(MOCKCLOUD_PKG_DIR)/lib/
-	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
-	# Clean up some dev / build bits
-	find $(PKG_DIR) -name "*.pyc" | xargs rm -f
-	find $(PKG_DIR) -name "*.o" | xargs rm -f
-	find $(PKG_DIR) -name c4che | xargs rm -rf   # waf build file
-	find $(PKG_DIR) -name .wafpickle* | xargs rm -rf   # waf build file
-	find $(PKG_DIR) -name .lock-wscript | xargs rm -rf   # waf build file
-	find $(PKG_DIR) -name config.log | xargs rm -rf   # waf build file
-	(cd $(PKG_DIR); $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root)
+release: all
+	@echo "Building $(RELEASE_TARBALL)"
+	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)
+	cp -PR \
+		$(TOP)/lib \
+		$(TOP)/node_modules \
+		$(TOP)/package.json \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)
+	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
+	# sdcnode
+	cp -PR \
+		$(TOP)/build/node \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
+	# Trim node
+	rm -rf \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/bin/npm \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/lib/node_modules \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/include \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/share
+	# Tar
+	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root)
+	@rm -rf $(RELSTAGEDIR)
 
 publish:
 	@if [[ -z "$(BITS_DIR)" ]]; then \
