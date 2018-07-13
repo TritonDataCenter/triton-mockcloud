@@ -65,9 +65,9 @@ release: all
 		$(TOP)/smf \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)
 	# setup for mockcloud-setup SMF to be imported on boot
-	mkdir -p $(RELSTAGEDIR)/root/lib/svc/manifest/site
+	mkdir -p $(RELSTAGEDIR)/root/var/svc/manifest/site
 	ln -s /opt/triton/$(NAME)/smf/manifests/mockcloud-setup.xml \
-		$(RELSTAGEDIR)/root/lib/svc/manifest/site/mockcloud-setup.xml
+		$(RELSTAGEDIR)/root/var/svc/manifest/site/mockcloud-setup.xml
 	# sdcnode
 	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
 	cp -PR \
