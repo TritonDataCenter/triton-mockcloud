@@ -39,7 +39,7 @@ if [[ -f $SETUP_COMPLETE_FILE ]]; then
 fi
 
 # Set nodename/hostname to something that is nice to see in PS1.
-NODENAME=$(mdata-get sdc:alias)-$(zonename | cut -d- -f1)
+NODENAME=$(mdata-get sdc:alias)
 /opt/local/bin/sm-set-hostname $NODENAME
 
 # Bash profile:
