@@ -12,6 +12,9 @@ CLEAN_FILES += ./node_modules
 # scripts for use when installing those agents via `apm install` on a TritonDC
 # CN itself. We do *not* want to run these scripts for the `npm install` here.
 NPM_ENV = SDC_AGENT_SKIP_LIFECYCLE=yes MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFMERGE=/bin/true'
+# TODO:
+# - want to run `npm install *--production*` or whatever in CI build
+# - if available, want to run `npm ci ...` in CI build. how to tell?
 
 ifeq ($(shell uname -s),SunOS)
 	# sdcnode: use a recent node version (v6 for now) and recent
@@ -57,6 +60,12 @@ fmt:: | $(ESLINT)
 .PHONY: release
 release: all
 	@echo "Building $(RELEASE_TARBALL)"
+	# Stubs for Triton core user-script boot.
+	mkdir -p $(RELSTAGEDIR)/root/opt/smartdc
+	cp -PR \
+		$(TOP)/boot \
+		$(RELSTAGEDIR)/root/opt/smartdc
+	# Mockcloud code to /opt/triton/mockcloud.
 	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)
 	cp -PR \
 		$(TOP)/lib \
@@ -64,22 +73,18 @@ release: all
 		$(TOP)/package.json \
 		$(TOP)/smf \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)
-	# setup for mockcloud-setup SMF to be imported on boot
-	mkdir -p $(RELSTAGEDIR)/root/var/svc/manifest/site
-	ln -s /opt/triton/$(NAME)/smf/manifests/mockcloud-setup.xml \
-		$(RELSTAGEDIR)/root/var/svc/manifest/site/mockcloud-setup.xml
 	# sdcnode
 	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
 	cp -PR \
 		$(TOP)/build/node \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
-	# Trim node
+	# Trim sdcnode for size.
 	rm -rf \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/bin/npm \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/lib/node_modules \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/include \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/share
-	# Tar
+	# Tar it up.
 	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root)
 	@rm -rf $(RELSTAGEDIR)
 
