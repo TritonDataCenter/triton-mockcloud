@@ -6,7 +6,7 @@ NAME=mockcloud
 
 JS_FILES := $(shell find lib -name '*.js')
 ESLINT_FILES := $(JS_FILES)
-CLEAN_FILES += ./node_modules
+CLEAN_FILES += ./node_modules npm-debug.log
 
 # We are including Triton agents as deps. Some of them include npm postinstall
 # scripts for use when installing those agents via `apm install` on a TritonDC
