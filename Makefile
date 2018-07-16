@@ -68,6 +68,8 @@ release: all
 	# Mockcloud code to /opt/triton/mockcloud.
 	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)
 	cp -PR \
+		$(TOP)/README.md \
+		$(TOP)/bin \
 		$(TOP)/lib \
 		$(TOP)/node_modules \
 		$(TOP)/package.json \
