@@ -73,7 +73,8 @@ cat <<EMOTD >/etc/motd
 EMOTD
 
 # Setup mock servers, cn-agent, etc.
-# TODO: ...
+/opt/triton/mockcloud/bin/mockcloud-ensure-servers
+svccfg import /opt/triton/mockcloud/smf/manifests/cn-agent.xml
 
 # Note completion
 touch $SETUP_COMPLETE_FILE
