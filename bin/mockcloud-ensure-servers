@@ -19,6 +19,8 @@ fi
 set -o errexit
 set -o pipefail
 
+export PATH=/opt/triton/mockcloud/bin:/opt/triton/mockcloud/build/node/bin:$PATH
+
 
 # ---- support functions
 
