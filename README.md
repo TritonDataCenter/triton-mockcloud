@@ -5,9 +5,6 @@ image provisioned on the "admin" network in a dev/test Triton Data Center
 (TritonDC) can act as 1 or more mock servers. The goal is to provide
 sufficient mocking to load test TritonDC for many CNs.
 
-- Published images: `updates-imgadm -C '*' list name=mockcloud`.
-  Note that images before 2018-07 are the old, obsolete mockcloud v1.
-
 
 ## Overview
 
@@ -34,41 +31,29 @@ etc.) to load test other TritonDC headnode services.
 
 ## How to create a mockcloud VM
 
-For now just quick notes. (TODO: create a mockcloud-create-instance tool
-to run in a DC headnode GZ.)
+To deploy a mockcloud VM requires:
 
-```
-# Install latest mockcloud image (experimental builds for now).
-img=$(updates-imgadm -C experimental list name=mockcloud --latest -H -o uuid)
-sdc-imgadm import -S https://updates.joyent.com?channel=experimental $img
+- a joyent-minimal VM
+- using a mockcloud image
+  (List published images via: `updates-imgadm -C '*' list name=mockcloud`.
+  Note that images before 2018-07 are the old, obsolete mockcloud v1.)
+- with a nic on the "admin" network
+- with the following `customer_metadata`:
+    - "user-script" - "/opt/smartdc/boot/setup.sh" or the full typical
+      Triton core zone user-script (https://github.com/joyent/sdcadm/blob/master/etc/setup/user-script)
+      to trigger the [one-time mockcloud zone setup](https://github.com/joyent/triton-mockcloud/blob/TRITON-586/smf/method/mockcloud-setup)
+    - "ufdsAdmin" - the "admin" login UUID
+    - "dnsDomain" - "dns_domain" from TritonDC config
+    - "mockcloudNumServers" - the integer number of servers to mock
 
-# Create a mockcloud zone.
-#
-# Change `server` if you want to use a different server. E.g. for
-server=$(sysinfo | json UUID)
-mockcloudNumServers=5
-ufdsAdminUuid=$(bash /lib/sdc/config.sh -json | json ufds_admin_uuid)
-latestAliasN=$(sdc-vmapi "/vms?owner_uuid=$ufdsAdminUuid&alias=mockcloud" | json -Ha alias | cut -c10- | sort -n | tail -1 || echo "0")
-alias=mockcloud$(( $latestAliasN + 1 ))
-sdc-vmadm create <<EOP
-{
-    "alias": "$alias",
-    "brand": "joyent-minimal",
-    "owner_uuid": "$(bash /lib/sdc/config.sh -json | json ufds_admin_uuid)",
-    "billing_id": "$(sdc-papi /packages?name=sample-4G | json -H 0.uuid)",
-    "networks": [
-        {"uuid": "$(sdc-napi /networks?name=admin | json -H 0.uuid)"}
-    ],
-    "server_uuid": "$server",
-    "image_uuid": "$(sdc-imgadm list name=mockcloud --latest -H -o uuid)",
-    "delegate_dataset": true,
-    "customer_metadata": {
-        "user-script": "/opt/smartdc/boot/setup.sh",
-        "ufdsAdmin": "$(sdc-sapi /applications?name=sdc | json -H 0.metadata.ufds_admin_uuid)",
-        "dnsDomain": "$(sdc-sapi /applications?name=sdc | json -H 0.metadata.dns_domain)",
-        "mockcloudNumServers": $mockcloudNumServers
-    }
-}
-EOP
-```
+There is [a "mockcloud-deploy"
+script](https://github.com/joyent/triton-mockcloud/blob/TRITON-586/tools/mockcloud-deploy)
+to help deploy these. Usage:
 
+    # prompts for parameters:
+    bash -c "$(curl -ksSL https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy)"
+
+    # or:
+    curl -ksSL -O https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy
+    chmod +x ./mockcloud-deploy
+    ./mockcloud-deploy [-y] [-i IMAGE] DEPLOY-SERVER NUM-MOCK-SERVERS
