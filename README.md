@@ -47,6 +47,7 @@ sdc-imgadm import -S https://updates.joyent.com?channel=experimental $img
 # Change `server` if you want to use a different server. E.g. for
 server=$(sysinfo | json UUID)
 mockcloudNumServers=5
+ufdsAdminUuid=$(bash /lib/sdc/config.sh -json | json ufds_admin_uuid)
 latestAliasN=$(sdc-vmapi "/vms?owner_uuid=$ufdsAdminUuid&alias=mockcloud" | json -Ha alias | cut -c10- | sort -n | tail -1 || echo "0")
 alias=mockcloud$(( $latestAliasN + 1 ))
 sdc-vmadm create <<EOP
