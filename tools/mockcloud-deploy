@@ -12,10 +12,10 @@
 # VM.
 #
 # Usage (prompts for parameters):
-#   sh -c $(curl -sSL https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy)
+#   bash -c "$(curl -ksSL https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy)"
 #
 # or:
-#   curl -sSL -O https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy
+#   curl -ksSL -O https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy
 #   chmod +x ./mockcloud-deploy
 #   ./mockcloud-deploy [-y] [-i IMAGE] DEPLOY-SERVER NUM-MOCK-SERVERS
 #
@@ -45,6 +45,7 @@ function fatal
     || fatal "This script must run from a TritonDC headnode global zone: sysinfo says this is not a headnode"
 
 mockcloudImageChannel=experimental
+packageName=sample-4G
 skipConfirmations=no
 mockcloudImage=
 deployServer=
@@ -59,7 +60,8 @@ if [[ $# -gt 0 ]]; then
                 fatal "TODO: usage"
                 exit 0
                 ;;
-            i) mockcloudImage=$OPTARG
+            i)
+                mockcloudImage=$OPTARG
                 ;;
             y)
                 skipConfirmations=yes
@@ -77,8 +79,10 @@ if [[ $# -gt 0 ]]; then
     numMockServers=$2
     [[ -n "$numMockServers" ]] || fatal "missing NUM-MOCK-SERVERS argument"
 else
-    echo "This script will deploy a mockcloud VM."
-    mockcloudImage=latest
+    echo "Please enter some data for your mockcloud VM."
+    echo -n " - mockcloud image (UUID, 'latest' [the default], or 'current'): "
+    read mockcloudImage
+    [[ -z "$mockcloudImage" ]] && mockcloudImage=latest
     echo -n " - deploy server (UUID or hostname, defaults to current server): "
     read deployServer
     [[ -z "$deployServer" ]] && deployServer=current
@@ -87,7 +91,7 @@ else
     [[ -z "$numMockServers" ]] && numMockServers=5
 fi
 
-# Gather an validate values
+# Validate and gather VM data.
 if [[ "$deployServer" == "current" ]]; then
     deployServerUuid=$(sysinfo | json UUID)
 else
@@ -103,46 +107,56 @@ if [[ -z "$(echo "$numMockServers" | grep -E '^[0-9]+$' || true)" ]]; then
     fatal "number of mock servers value is not an integer: '$numMockServers'"
 fi
 
+if [[ "$mockcloudImage" == "current" ]]; then
+    mockcloudImage=$(sdc-imgadm list name=mockcloud --latest -H -o uuid)
+    [[ -n "$mockcloudImage" ]] \
+        || fatal "there is no 'current' mockcloud image installed in this " \
+            "DC's IMGAPI, use 'latest' to import from updates.joyent.com"
+fi
 if [[ "$mockcloudImage" == "latest" ]]; then
     mockcloudImage=$(updates-imgadm -C $mockcloudImageChannel list -H -o uuid --latest name=mockcloud)
 fi
 mockcloudImageVersion=$(updates-imgadm -C '*' get $mockcloudImage | json version)
 
-# Dump summary
+ufdsAdminUuid=$(bash /lib/sdc/config.sh -json | json ufds_admin_uuid)
+latestAliasN=$(sdc-vmapi "/vms?owner_uuid=$ufdsAdminUuid&alias=mockcloud" | json -Ha alias | cut -c10- | sort -n | tail -1 || echo "-1")
+alias=mockcloud$(( $latestAliasN + 1 ))
+
+# Summary, assumptions, and confirmation.
 echo ""
-echo "Deploying a mockcloud VM:"
+echo "This script will deploy a mockcloud VM. Currently it assumes:"
+echo " 1. the '$packageName' package exists (typically installed via"
+echo "    'sdcadm post-setup dev-sample-data'), and"
+echo " 2. the IMGAPI service has an external NIC so it can import the"
+echo "    mockcloud image (run 'sdcadm post-setup common-external-nics')."
+echo ""
+echo "Mockcloud VM data:"
+echo " - package: $packageName"
 echo " - image: $mockcloudImage (mockcloud@$mockcloudImageVersion)"
-echo " - deploy server: $deployServerUuid ($deployServerHostname)"
+echo " - server: $deployServerUuid ($deployServerHostname)"
+echo " - VM alias: $alias"
 echo " - num mock servers: $numMockServers"
 
 if [[ "$skipConfirmations" != "yes" ]]; then
     echo ""
-    echo "Press return to continue / Ctrl+C to abort."
+    echo -n "Press return to continue / Ctrl+C to abort."
     read
-else
-    echo ""
 fi
-
+echo ""
 
 # Import the image if necessary.
-# TODO: could check and/or suggest 'sdcadm post-setup common-external-nics'
 if ! sdc-imgadm get $mockcloudImage >/dev/null 2>&1; then
-    echo "Importing mockcloud image (requires IMGAPI external nic)"
+    echo "Importing mockcloud image (assumes IMGAPI external nic)"
     sdc-imgadm import $mockcloudImage -S https://updates.joyent.com?channel=$mockcloudImageChannel
 fi
 
 # TODO: Want a '--wait' option on 'sdc-vmadm create'.
-ufdsAdminUuid=$(bash /lib/sdc/config.sh -json | json ufds_admin_uuid)
-latestAliasN=$(sdc-vmapi "/vms?owner_uuid=$ufdsAdminUuid&alias=mockcloud" | json -Ha alias | cut -c10- | sort -n | tail -1 || echo "-1")
-alias=mockcloud$(( $latestAliasN + 1 ))
-echo "Creating VM $alias on server $deployServerUuid"
-echo "(assumes 'sample-4G package from 'sdcadm post-setup dev-sample-data')"
 sdc-vmadm create <<EOP
 {
     "alias": "$alias",
     "brand": "joyent-minimal",
     "owner_uuid": "$(bash /lib/sdc/config.sh -json | json ufds_admin_uuid)",
-    "billing_id": "$(sdc-papi /packages?name=sample-4G | json -H 0.uuid)",
+    "billing_id": "$(sdc-papi /packages?name=$packageName | json -H 0.uuid)",
     "networks": [
         {"uuid": "$(sdc-napi /networks?name=admin | json -H 0.uuid)"}
     ],
