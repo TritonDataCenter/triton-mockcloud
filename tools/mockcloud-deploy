@@ -12,10 +12,10 @@
 # VM.
 #
 # Usage (prompts for parameters):
-#   bash -c "$(curl -ksSL https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy)"
+#   bash -c "$(curl -ksSL https://raw.githubusercontent.com/joyent/triton-mockcloud/master/tools/mockcloud-deploy)"
 #
 # or:
-#   curl -ksSL -O https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy
+#   curl -ksSL -O https://raw.githubusercontent.com/joyent/triton-mockcloud/master/tools/mockcloud-deploy
 #   chmod +x ./mockcloud-deploy
 #   ./mockcloud-deploy [-y] [-i IMAGE] DEPLOY-SERVER NUM-MOCK-SERVERS
 #
@@ -171,4 +171,3 @@ sdc-vmadm create <<EOP
     }
 }
 EOP
-
