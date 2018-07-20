@@ -34,7 +34,9 @@ include ./tools/mk/Makefile.node_modules.defs
 ifeq ($(shell uname -s),SunOS)
 	include ./tools/mk/Makefile.node_prebuilt.defs
 else
-	NPM_EXEC :=
+	NODE_EXEC := $(shell which node)
+	NODE = node
+	NPM_EXEC := $(shell which npm)
 	NPM = npm
 endif
 include ./tools/mk/Makefile.smf.defs
