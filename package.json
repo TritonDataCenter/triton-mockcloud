@@ -6,7 +6,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joyent/sdc-mockcloud.git"
+    "url": "git+https://github.com/joyent/triton-mockcloud.git"
   },
   "dependencies": {
     "assert-plus": "^1.0.0",

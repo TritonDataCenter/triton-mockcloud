@@ -1,9 +1,9 @@
 # triton-mockcloud
 
-This repo provides tooling to create a "mockcloud" image. A VM using this
-image provisioned on the "admin" network in a dev/test Triton Data Center
-(TritonDC) can act as 1 or more mock servers. The goal is to provide
-sufficient mocking to load test TritonDC for many CNs.
+This repo provides tooling to create a "mockcloud" image. A VM using this image
+provisioned on the "admin" network in a dev/test Triton Data Center (TritonDC)
+can act as 1 or more mock CNs. The goal is to provide sufficient synthetic
+load to load test TritonDC for many CNs.
 
 
 ## Overview
@@ -41,19 +41,19 @@ To deploy a mockcloud VM requires:
 - with the following `customer_metadata`:
     - "user-script" - "/opt/smartdc/boot/setup.sh" or the full typical
       Triton core zone user-script (https://github.com/joyent/sdcadm/blob/master/etc/setup/user-script)
-      to trigger the [one-time mockcloud zone setup](https://github.com/joyent/triton-mockcloud/blob/TRITON-586/smf/method/mockcloud-setup)
+      to trigger the [one-time mockcloud zone setup](https://github.com/joyent/triton-mockcloud/blob/master/smf/method/mockcloud-setup)
     - "ufdsAdmin" - the "admin" login UUID
     - "dnsDomain" - "dns_domain" from TritonDC config
     - "mockcloudNumServers" - the integer number of servers to mock
 
 There is [a "mockcloud-deploy"
-script](https://github.com/joyent/triton-mockcloud/blob/TRITON-586/tools/mockcloud-deploy)
+script](https://github.com/joyent/triton-mockcloud/blob/master/tools/mockcloud-deploy)
 to help deploy these. Usage:
 
     # prompts for parameters:
-    bash -c "$(curl -ksSL https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy)"
+    bash -c "$(curl -ksSL https://raw.githubusercontent.com/joyent/triton-mockcloud/master/tools/mockcloud-deploy)"
 
     # or:
-    curl -ksSL -O https://raw.githubusercontent.com/joyent/triton-mockcloud/TRITON-586/tools/mockcloud-deploy
+    curl -ksSL -O https://raw.githubusercontent.com/joyent/triton-mockcloud/master/tools/mockcloud-deploy
     chmod +x ./mockcloud-deploy
     ./mockcloud-deploy [-y] [-i IMAGE] DEPLOY-SERVER NUM-MOCK-SERVERS
