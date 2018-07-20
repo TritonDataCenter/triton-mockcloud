@@ -1,34 +1,28 @@
 #
-# Copyright (c) 2017, Joyent, Inc. All rights reserved.
+# Copyright (c) 2018, Joyent, Inc.
 #
 
 NAME=mockcloud
 
-#
-# Directories
-#
-TOP := $(shell pwd)
+JS_FILES := $(shell find lib -name '*.js')
+ESLINT_FILES := $(JS_FILES)
+CLEAN_FILES += ./node_modules npm-debug.log
 
-#
-# Files
-#
-REPO_ROOT	= $(shell pwd)
-JS_FILES	:= $(shell find src bin lib test -name '*.js')
-JSL_CONF_NODE	 = tools/jsl.node.conf
-JSL_FILES_NODE   = $(JS_FILES)
-JSSTYLE_FILES	 = $(JS_FILES)
-PKG_DIR = $(BUILD)/pkg
-MOCKCLOUD_PKG_DIR = $(PKG_DIR)/root/opt/smartdc/mockcloud
-RELEASE_TARBALL=$(NAME)-pkg-$(STAMP).tar.bz2
-CLEAN_FILES += ./node_modules build/pkg $(NAME)-pkg-*.tar.bz2
-REPO_MODULES := src/node-pack
-JSSTYLE_FLAGS = -o indent=4,doxygen,unparenthesized-return=0
+# We are including Triton agents as deps. Some of them include npm postinstall
+# scripts for use when installing those agents via `apm install` on a TritonDC
+# CN itself. We do *not* want to run these scripts for the `npm install` here.
+NPM_ENV = SDC_AGENT_SKIP_LIFECYCLE=yes MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFMERGE=/bin/true'
+# TODO:
+# - want to run `npm install *--production*` or whatever in CI build
+# - if available, want to run `npm ci ...` in CI build. how to tell?
 
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_VERSION=v0.12.17
+	# sdcnode: use a recent node version (v6 for now) and recent
+	# triton-origin image (multiarch@18.1.0 is being explored now).
+	NODE_PREBUILT_VERSION=v6.14.3
 	NODE_PREBUILT_TAG=zone
-	# Allow building on a SmartOS image other than sdc-smartos/1.6.3.
-	NODE_PREBUILT_IMAGE = 18b094b0-eb01-11e5-80c1-175dac7ddf02
+	# minimal-multiarch 18.1.0
+	NODE_PREBUILT_IMAGE = 1ad363ec-3b83-11e8-8521-2f68a4a34d5d
 endif
 
 
@@ -36,81 +30,73 @@ endif
 # Included definitions
 #
 include ./tools/mk/Makefile.defs
+include ./tools/mk/Makefile.node_modules.defs
 ifeq ($(shell uname -s),SunOS)
 	include ./tools/mk/Makefile.node_prebuilt.defs
 else
-	NPM_EXEC :=
+	NODE_EXEC := $(shell which node)
+	NODE = node
+	NPM_EXEC := $(shell which npm)
 	NPM = npm
 endif
-include ./tools/mk/Makefile.node_deps.defs
 include ./tools/mk/Makefile.smf.defs
 
-#
-# Due to the unfortunate nature of npm, the Node Package Manager, there appears
-# to be no way to assemble our dependencies without running the lifecycle
-# scripts.  These lifecycle scripts should not be run except in the context of
-# an agent installation or uninstallation, so we provide a magic environment
-# varible to disable them here.
-#
-NPM_ENV =		SDC_AGENT_SKIP_LIFECYCLE=yes \
-			MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFMERGE=/bin/true'
-RUN_NPM_INSTALL =	$(NPM_ENV) $(NPM) install
+RELEASE_TARBALL = $(NAME)-pkg-$(STAMP).tar.bz2
+RELSTAGEDIR := /tmp/$(STAMP)
 
-TAPE	:= ./node_modules/.bin/tape
 
 #
 # Repo-specific targets
 #
 .PHONY: all
-all:
+all: $(STAMP_NODE_MODULES)
 
-.PHONY: test
-test:
-	@echo "Success!"
+.PHONY: git-hooks
+git-hooks:
+	ln -sf ../../tools/pre-commit.sh .git/hooks/pre-commit
 
-.PHONY: test-coal
-test-coal:
-#	./tools/rsync-to coal
-	ssh root@10.99.99.7 'LOG_LEVEL=$(LOG_LEVEL) /zones/$$(vmadm lookup -1 alias=mockcloud0)/root/opt/smartdc/mockcloud/test/runtests $(TEST_ARGS)'
+.PHONY: fmt
+fmt:: | $(ESLINT)
+	$(ESLINT) --fix $(ESLINT_FILES)
 
-#
-# Packaging targets
-#
-.PHONY: pkg
-pkg: $(NODE_EXEC) all
-	rm -rf $(PKG_DIR)
-	mkdir -p $(MOCKCLOUD_PKG_DIR)
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/node_modules
-	cp package.json $(MOCKCLOUD_PKG_DIR)/
-	(cd $(MOCKCLOUD_PKG_DIR) && $(NPM_ENV) npm install)
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/bin
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/lib
-	mkdir -p $(MOCKCLOUD_PKG_DIR)/mocks
-	cp -PR smf \
-		$(MOCKCLOUD_PKG_DIR)
-	cp mocks/* $(MOCKCLOUD_PKG_DIR)/mocks/
-	cp bin/* $(MOCKCLOUD_PKG_DIR)/bin/
-	cp -r $(REPO_ROOT)/build/node $(MOCKCLOUD_PKG_DIR)/node
-	cp -r lib/* $(MOCKCLOUD_PKG_DIR)/lib/
-	cp -PR node_modules/* $(MOCKCLOUD_PKG_DIR)/node_modules/
-	# Clean up some dev / build bits
-	find $(PKG_DIR) -name "*.pyc" | xargs rm -f
-	find $(PKG_DIR) -name "*.o" | xargs rm -f
-	find $(PKG_DIR) -name c4che | xargs rm -rf   # waf build file
-	find $(PKG_DIR) -name .wafpickle* | xargs rm -rf   # waf build file
-	find $(PKG_DIR) -name .lock-wscript | xargs rm -rf   # waf build file
-	find $(PKG_DIR) -name config.log | xargs rm -rf   # waf build file
-
-release: $(RELEASE_TARBALL)
-
-$(RELEASE_TARBALL): pkg
-	(cd $(PKG_DIR); $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root)
+.PHONY: release
+release: all
+	@echo "Building $(RELEASE_TARBALL)"
+	# Stubs for Triton core user-script boot.
+	mkdir -p $(RELSTAGEDIR)/root/opt/smartdc
+	cp -PR \
+		$(TOP)/boot \
+		$(RELSTAGEDIR)/root/opt/smartdc
+	# Mockcloud code to /opt/triton/mockcloud.
+	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)
+	cp -PR \
+		$(TOP)/README.md \
+		$(TOP)/bin \
+		$(TOP)/lib \
+		$(TOP)/node_modules \
+		$(TOP)/package.json \
+		$(TOP)/smf \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)
+	# sdcnode
+	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
+	cp -PR \
+		$(TOP)/build/node \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
+	# Trim sdcnode for size.
+	rm -rf \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/bin/npm \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/lib/node_modules \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/include \
+		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/share
+	# Tar it up.
+	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root)
+	@rm -rf $(RELSTAGEDIR)
 
 publish:
 	@if [[ -z "$(BITS_DIR)" ]]; then \
-      echo "error: 'BITS_DIR' must be set for 'publish' target"; \
-      exit 1; \
-    fi
+		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
+		exit 1; \
+	fi
 	mkdir -p $(BITS_DIR)/$(NAME)
 	cp $(RELEASE_TARBALL) $(BITS_DIR)/$(NAME)/$(RELEASE_TARBALL)
 
@@ -119,10 +105,9 @@ publish:
 # Includes
 #
 include ./tools/mk/Makefile.deps
+include ./tools/mk/Makefile.node_modules.targ
 ifeq ($(shell uname -s),SunOS)
 	include ./tools/mk/Makefile.node_prebuilt.targ
 endif
-include ./tools/mk/Makefile.node_deps.targ
 include ./tools/mk/Makefile.smf.targ
 include ./tools/mk/Makefile.targ
-

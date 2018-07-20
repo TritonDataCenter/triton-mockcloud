@@ -1,4 +1,3 @@
-# -*- mode: makefile -*-
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -6,24 +5,24 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2016, Joyent, Inc.
 #
 
 #
-# Makefile.smf.targ: see Makefile.smf.defs.
+# Makefile.manpages.targ: targets for building manual pages.
 #
 # NOTE: This makefile comes from the "eng" repo. It's designed to be dropped
 # into other repos as-is without requiring any modifications. If you find
 # yourself changing this file, you should instead update the original copy in
 # eng.git and then update your repo to use the new version.
 #
-.PHONY: check-manifests
-check-manifests: $(SMF_MANIFESTS:%=%.smfchk)
 
-%.smfchk: %
-	$(XMLLINT) --path $(dir $(SMF_DTD)) --dtdvalid $(SMF_DTD) $^
+#
+# See Makefile.manpages.defs.
+#
 
-check:: check-manifests
+$(MAN_$(MAN_SECTION)_OUTPUTS): $(MAN_OUTDIR_$(MAN_SECTION))/%.$(MAN_SECTION): $(MAN_INDIR_$(MAN_SECTION))/%.md | $(MAN_OUTDIR_$(MAN_SECTION))
+	$(MD2MAN) $^ > $@
 
-$(SMF_MANIFESTS): %: %.in
-	$(SED) -e 's#@@NODE@@#@@PREFIX@@/$(NODE_INSTALL)/bin/node#' $< > $@
+$(MAN_OUTDIR_$(MAN_SECTION)):
+	$(MKDIRP) $@

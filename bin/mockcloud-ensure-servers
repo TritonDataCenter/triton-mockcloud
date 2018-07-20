@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright (c) 2018, Joyent, Inc.
+#
+
+#
+# Create or delete mock servers to get to the intended number defined by
+# `mdata-get mockcloudNumServers`.
+#
+
+if [[ -n "$TRACE" ]]; then
+    export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+    set -o xtrace
+fi
+set -o errexit
+set -o pipefail
+
+export PATH=/opt/triton/mockcloud/bin:/opt/triton/mockcloud/build/node/bin:$PATH
+
+
+# ---- support functions
+
+function fatal
+{
+    echo "$0: fatal error: $*"
+    exit 1
+}
+
+function createServer
+{
+    node /opt/triton/mockcloud/node_modules/cn-agent/lib/backends/dummy/tools/create-server.js
+}
+
+function deleteServer
+{
+    node /opt/triton/mockcloud/node_modules/cn-agent/lib/backends/dummy/tools/delete-server.js "$@"
+}
+
+
+# ---- mainline
+
+# This should match SERVER_ROOT defined in cn-agent
+# (https://github.com/joyent/sdc-cn-agent/blob/f3798e88d93004ed89e6fd6a8572d733b75096c2/lib/backends/dummy/common.js#L24).
+SERVER_ROOT=/opt/custom/virtual/servers
+
+numServers=$(mdata-get mockcloudNumServers)
+numCurrServers=0
+if [[ -d $SERVER_ROOT ]]; then
+    numCurrServers=$(ls $SERVER_ROOT | wc -l)
+fi
+
+if [[ $numServers -eq $numCurrServers ]]; then
+    echo "Already have $numServers mock servers"
+    exit 0
+elif [[ $numServers -gt $numCurrServers ]]; then
+    echo "Ensuring $numServers mock servers (currently have $numCurrServers)"
+    numToCreate=$(( $numServers - $numCurrServers ))
+    while [[ $numToCreate -gt 0 ]]; do
+        createServer
+        numToCreate=$(( $numToCreate - 1 ))
+    done
+else
+    echo "Ensuring $numServers mock servers (currently have $numCurrServers)"
+    numToDelete=$(( $numCurrServers - $numServers ))
+    while [[ $numToDelete -gt 0 ]]; do
+        # Remove the *oldest* server.
+        deleteServer "$(ls -t $SERVER_ROOT | tail -1)"
+        numToDelete=$(( $numToDelete - 1 ))
+    done
+fi
+
+# If there is a cn-agent service yet, then restart it.
+cnAgentState=$(svcs -Ho fmri cn-agent 2>/dev/null || true)
+if [[ -z "$cnAgentState" ]]; then
+    true # pass
+elif [[ "$cnAgentState" == "maintenance" ]]; then
+    echo "Clearing cn-agent service"
+    svcadm clear cn-agent
+else
+    echo "Restarting cn-agent service"
+    svcadm restart cn-agent
+fi
+
+
+exit 0

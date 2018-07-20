@@ -1,83 +1,59 @@
-# SDC Mock Cloud
+# triton-mockcloud
 
-The purpose of Mock Cloud zone and service is to allow creation of very
-lightweight simulated servers. These "mocked" servers permit one to execute
-common datacenter actions as if they were real compute nodes. These mock
-compute nodes may then be used to facilitate the testing of SDC components
-without requiring an inordiate amount of real hardware. As much as is
-reasonably possible, simulated servers will mimick the behaviour of real
-compute nodes running SDC. In this way it is possible to create hundreds or
-possibly thousands of mock compute nodes and virtual machines.
-
-The mock cloud zone contains the `mock-agent` service is what ultimate weaves
-the illusion to mimic the presence of compute nodes to the rest of the SDC
-stack. These mocked servers may be created, destroyed and be used as
-provisioning destinations.
-
-Mock Cloud is still under heavy development so behaviours, interfaces and
-produced results are subject to change.
+This repo provides tooling to create a "mockcloud" image. A VM using this image
+provisioned on the "admin" network in a dev/test Triton Data Center (TritonDC)
+can act as 1 or more mock CNs. The goal is to provide sufficient synthetic
+load to load test TritonDC for many CNs.
 
 
-# Installation
+## Overview
 
-Copy `bin/create-mockcloud` to the headnode and execute it. This will download
-and install the mockcloud zone on your headnode.
+A "mockcloud" image includes the latest cn-agent and uses cn-agent's "dummy"
+backend (added in TRITON-381) which supports running a single cn-agent
+process that acts as one or more CNs (using data in
+`/opt/custom/virtual/servers/$uuid`).
 
-Alternatively, if your headnode has external access:
-
-    curl -k https://raw.githubusercontent.com/joyent/sdc-mockcloud/master/bin/create-mockcloud | bash
-
-
-# Usage
-
-Within the mockcloud zone, run the following command to create a new server.
-
-    curl -v -X POST -d"$(json 'PowerEdge C2100' < lib/canned_profiles.json)" \
-        -H 'Content-Type: application/json' http://0.0.0.0/servers
+To plan is to add mock support for other GZ agents (config-agent, vm-agent,
+etc.) to load test other TritonDC headnode services.
 
 
-The server can be removed from mockcloud via:
+## Considerations / Limitations
 
-    curl -v -X DELETE http://0.0.0.0/servers/de305d54-75b4-431b-adb2-eb6b9e546014
+- Each mocked CN requires an IP on the admin network. Therefore, to simulate
+  a large number of CNs (e.g. 1000s) you'll need a large "admin" network
+  range ("admin_network" and "admin_network" in the headnode config). The
+  default/typical setup for COAL will be limited to approximately 200 CNs.
 
-
-Within the mockcloud zone, one may also use the `mockcloudadm` tool:
-
-    cd /opt/smartdc/mockcloud
-
-
-To list possible profiles for mockcloud compute node creation:
-
-    /usr/node/bin/node ./bin/mockcloudadm server list-profiles
+- The mocking doesn't have complete coverage. However things like VM
+  provisioning *does* work: the VM provisioned is just a JSON file dumped into
+  the server data dir under "/opt/customer/virtual/servers/...".
 
 
-To create a compute node:
+## How to create a mockcloud VM
 
-    /usr/node/bin/node ./bin/mockcloudadm server create "PowerEdge C2100"
+To deploy a mockcloud VM requires:
 
+- a joyent-minimal VM
+- using a mockcloud image
+  (List published images via: `updates-imgadm -C '*' list name=mockcloud`.
+  Note that images before 2018-07 are the old, obsolete mockcloud v1.)
+- with a nic on the "admin" network
+- with the following `customer_metadata`:
+    - "user-script" - "/opt/smartdc/boot/setup.sh" or the full typical
+      Triton core zone user-script (https://github.com/joyent/sdcadm/blob/master/etc/setup/user-script)
+      to trigger the [one-time mockcloud zone setup](https://github.com/joyent/triton-mockcloud/blob/master/smf/method/mockcloud-setup)
+    - "ufdsAdmin" - the "admin" login UUID
+    - "dnsDomain" - "dns_domain" from TritonDC config
+    - "mockcloudNumServers" - the integer number of servers to mock
 
-To create multiple compute nodes, use the `--count` option:
+There is [a "mockcloud-deploy"
+script](https://github.com/joyent/triton-mockcloud/blob/master/tools/mockcloud-deploy)
+to help deploy these. Usage:
 
-    /usr/node/bin/node ./bin/mockcloudadm server create --count 5 "PowerEdge C2100"
+    # prompts for parameters:
+    bash -c "$(curl -ksSL https://raw.githubusercontent.com/joyent/triton-mockcloud/master/tools/mockcloud-deploy)"
 
-
-That server may then be setup as one would any other server (now from the global zone):
-
-    sdc-server setup de305d54-75b4-431b-adb2-eb6b9e546014
-
-
-At this point it will be possible to use this server as a destination for
-provisioning.
-
-
-# Tests
-
-The tests must be run from the global-zone. To run the tests against coal
-(assuming a `coal` entry in your ssh config`):
-
-    make test-coal
-
-
-Otherwise, running it from the global zone directly:
-
-    /zones/$(vmadm lookup -1 alias=mockcloud0)/root/opt/smartdc/mockcloud/test/runtests 
+    # or:
+    curl -ksSL -O https://raw.githubusercontent.com/joyent/triton-mockcloud/master/tools/mockcloud-deploy
+    chmod +x ./mockcloud-deploy
+    ./mockcloud-deploy [-y] [-i IMAGE] DEPLOY-SERVER NUM-MOCK-SERVERS

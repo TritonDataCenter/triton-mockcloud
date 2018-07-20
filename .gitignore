@@ -1,9 +1,6 @@
-build/
-mockcn-*.bz2
-node_modules/.bin
-node_modules/bunyan
-node_modules/node-uuid
-node_modules/restify
-node_modules/ur-agent
-node_modules/vasync
-npm-debug.log
+/tmp
+/node_modules
+/make_stamps
+/npm-debug.log
+/mockcloud-pkg-*.tar.bz2
+/build

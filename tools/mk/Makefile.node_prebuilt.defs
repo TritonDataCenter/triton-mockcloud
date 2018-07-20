@@ -1,6 +1,13 @@
-# -*- mode: makefile -*-
 #
-# Copyright (c) 2012, Joyent, Inc. All rights reserved.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+
+#
+# Copyright (c) 2017, Joyent, Inc.
+#
+
 #
 # Makefile.node_prebuilt.defs: Makefile for including a prebuilt Node.js build.
 #
@@ -116,7 +123,7 @@ endif
 NODE_PREBUILT_PATTERN := sdcnode-$(NODE_PREBUILT_NAME)-$(NODE_PREBUILT_BRANCH)-.*\.tgz
 NODE_PREBUILT_DIR ?= https://download.joyent.com/pub/build/sdcnode/$(NODE_PREBUILT_IMAGE)/$(NODE_PREBUILT_BRANCH)-latest/sdcnode/
 ifeq ($(shell echo $(NODE_PREBUILT_DIR) | cut -c 1-4),http)
-	NODE_PREBUILT_BASE := $(shell curl -ksS --fail --connect-timeout 5 $(NODE_PREBUILT_DIR) | grep 'href=' | cut -d'"' -f2 | grep "^$(NODE_PREBUILT_PATTERN)$$" | sort | tail -1)
+	NODE_PREBUILT_BASE := $(shell curl -ksS --fail --connect-timeout 30 $(NODE_PREBUILT_DIR) | grep 'href=' | cut -d'"' -f2 | grep "^$(NODE_PREBUILT_PATTERN)$$" | sort | tail -1)
 	ifneq ($(NODE_PREBUILT_BASE),)
 		NODE_PREBUILT_TARBALL := $(NODE_PREBUILT_DIR)$(NODE_PREBUILT_BASE)
 	endif
@@ -138,8 +145,15 @@ NODE_EXEC	:= $(BUILD)/prebuilt-node-$(NODE_PREBUILT_NAME)
 NODE_WAF_EXEC	:= $(BUILD)/prebuilt-node-waf-$(NODE_PREBUILT_NAME)
 NPM_EXEC	:= $(BUILD)/prebuilt-npm-$(NODE_PREBUILT_NAME)
 
-# Ensure these use absolute paths to the executables to allow running
-# from a dir other than the project top.
+#
+# These paths should be used during the build process to invoke Node and
+# Node-related build tools like NPM.  All paths are fully qualified so that
+# they work regardless of the current working directory at the point of
+# invocation.
+#
+# Note that where PATH is overridden, the value chosen must cause execution of
+# "node" to find the same binary to which the NODE macro refers.
+#
 NODE		:= $(TOP)/$(NODE_INSTALL)/bin/node
 NODE_WAF	:= $(TOP)/$(NODE_INSTALL)/bin/node-waf
-NPM		:= PATH=$(TOP)/$(NODE_INSTALL)/bin:$(PATH) node $(TOP)/$(NODE_INSTALL)/bin/npm
+NPM		:= PATH=$(TOP)/$(NODE_INSTALL)/bin:$(PATH) $(NODE) $(TOP)/$(NODE_INSTALL)/bin/npm

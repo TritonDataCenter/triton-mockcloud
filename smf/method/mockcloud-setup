@@ -1,0 +1,83 @@
+#!/bin/bash
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright (c) 2018, Joyent, Inc.
+#
+
+#
+# "mockcloud-setup" service for setting up a mockcloud zone on first boot
+# after (re)provision.
+#
+
+export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -o xtrace
+set -o errexit
+set -o pipefail
+
+
+# ---- support functions
+
+function fatal
+{
+    echo "$0: fatal error: $*"
+    exit $SMF_EXIT_ERR_FATAL
+}
+
+
+# ---- mainline
+
+. /lib/svc/share/smf_include.sh
+
+# The same path as used by Triton core setup (from sdc-scripts.git).
+SETUP_COMPLETE_FILE=/var/svc/setup_complete
+if [[ -f $SETUP_COMPLETE_FILE ]]; then
+    # Already setup.
+    exit $SMF_EXIT_OK
+fi
+
+# Set nodename/hostname to something that is nice to see in PS1.
+NODENAME=$(mdata-get sdc:alias)
+/opt/local/bin/sm-set-hostname $NODENAME
+
+# Bash profile:
+# - set PATH, even for non-login sessions
+# - set MANTA_ envvars, but only for login sessions
+SVC_PREFIX=/opt/triton/mockcloud
+echo "" >>/root/.profile
+echo "export PATH=$SVC_PREFIX/bin:$SVC_PREFIX/build/node/bin:\$PATH" >>/root/.profile
+
+# Mount our delegated dataset at /data if we have one.
+dataset=zones/$(zonename)/data
+if zfs list | grep $dataset; then
+    mountpoint=$(zfs get -Hp mountpoint $dataset | awk '{print $3}')
+    if [[ $mountpoint != "/data" ]]; then
+        zfs set mountpoint=/data $dataset
+    fi
+else
+    mkdir /data
+fi
+
+# Data dir setup. For reprovisions on delegate datasets, this should already
+# be done.
+mkdir -p /data/mockcloud
+
+# MOTD
+cat <<EMOTD >/etc/motd
+** This is a mockcloud instance (https://github.com/joyent/triton-mockcloud)
+**            uuid: $(zonename) ($(mdata-get sdc:alias))
+**           image: $(mdata-get sdc:image_uuid)
+**       mock data: /data/mockcloud/servers
+EMOTD
+
+# Setup mock servers, cn-agent, etc.
+/opt/triton/mockcloud/bin/mockcloud-ensure-servers
+svccfg import /opt/triton/mockcloud/smf/manifests/cn-agent.xml
+
+# Note completion
+touch $SETUP_COMPLETE_FILE
+echo "Setup completed successfully"
+
+exit $SMF_EXIT_OK

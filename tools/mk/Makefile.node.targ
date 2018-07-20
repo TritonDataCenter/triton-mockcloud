@@ -1,6 +1,14 @@
 # -*- mode: makefile -*-
 #
-# Copyright (c) 2012, Joyent, Inc. All rights reserved.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+
+#
+# Copyright (c) 2014, Joyent, Inc.
+#
+
 #
 # Makefile.node.targ: See Makefile.node.defs.
 #
@@ -21,7 +29,7 @@ else
 $(NODE_EXEC) $(NPM_EXEC) $(NODE_WAF_EXEC):
 	(mkdir -p $(BUILD) \
 		&& cd $(BUILD) \
-		&& [[ -d src-node ]] && (cd src-node && git checkout master && git pull) || git clone git://github.com/joyent/node.git src-node \
+		&& [[ -d src-node ]] && (cd src-node && git checkout master && git pull) || git clone https://github.com/joyent/node.git src-node \
 		&& cd src-node \
 		&& git checkout $(NODE_PREBUILT_VERSION) \
 		&& ./configure $(NODE_CONFIG_FLAGS) \
