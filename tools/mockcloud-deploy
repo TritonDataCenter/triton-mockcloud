@@ -119,7 +119,8 @@ fi
 mockcloudImageVersion=$(updates-imgadm -C '*' get $mockcloudImage | json version)
 
 ufdsAdminUuid=$(bash /lib/sdc/config.sh -json | json ufds_admin_uuid)
-latestAliasN=$(sdc-vmapi "/vms?owner_uuid=$ufdsAdminUuid&alias=mockcloud" | json -Ha alias | cut -c10- | sort -n | tail -1 || echo "-1")
+latestAliasN=$(sdc-vmapi "/vms?state=active&owner_uuid=$ufdsAdminUuid&alias=mockcloud" | json -Ha alias | cut -c10- | sort -n | tail -1)
+[[ -n $latestAliasN ]] || latestAliasN="-1"
 alias=mockcloud$(( $latestAliasN + 1 ))
 
 # Summary, assumptions, and confirmation.

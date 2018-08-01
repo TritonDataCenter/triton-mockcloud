@@ -1,5 +1,11 @@
 # triton-mockcloud changelog
 
+## 2.0.1
+
+First instance should be `mockcloud0` not `mockcloud1`. Also ignore deleted
+instances when determining next name, and increase setup time to 600s from 30s
+to allow more CNs to be created.
+
 ## 2.0.0
 
 A re-write of mockcloud to support mocking multiple CNs with a single
