@@ -38,6 +38,7 @@ if [[ -f $SETUP_COMPLETE_FILE ]]; then
     exit $SMF_EXIT_OK
 fi
 
+
 # Set nodename/hostname to something that is nice to see in PS1.
 NODENAME=$(mdata-get sdc:alias)
 /opt/local/bin/sm-set-hostname $NODENAME
@@ -60,16 +61,27 @@ else
     mkdir /data
 fi
 
+# The "mockcloudRoot" metadata var is the base directory for mockcloud
+# data. It is in metadata so the various services running in this zone can
+# find it. By default this is "/data/mockcloud" (intentionally on the delegate
+# dataset, mounted at "/data").
+DEFAULT_MOCKCLOUD_ROOT=/data/mockcloud
+mockcloudRoot=$(mdata-get mockcloudRoot || true)
+if [[ -z "$mockcloudRoot" ]]; then
+    mockcloudRoot=$DEFAULT_MOCKCLOUD_ROOT
+    mdata-put mockcloudRoot "$mockcloudRoot"
+fi
+
 # Data dir setup. For reprovisions on delegate datasets, this should already
 # be done.
-mkdir -p /data/mockcloud
+mkdir -p "$mockcloudRoot"
 
 # MOTD
 cat <<EMOTD >/etc/motd
 ** This is a mockcloud instance (https://github.com/joyent/triton-mockcloud)
 **            uuid: $(zonename) ($(mdata-get sdc:alias))
 **           image: $(mdata-get sdc:image_uuid)
-**       mock data: /data/mockcloud/servers
+**       mock data: $mockcloudRoot
 EMOTD
 
 # Setup mock servers, cn-agent, etc.
