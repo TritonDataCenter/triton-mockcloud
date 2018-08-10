@@ -169,6 +169,9 @@ sdc-vmadm create <<EOP
         "ufdsAdmin": "$(sdc-sapi /applications?name=sdc | json -H 0.metadata.ufds_admin_uuid)",
         "dnsDomain": "$(sdc-sapi /applications?name=sdc | json -H 0.metadata.dns_domain)",
         "mockcloudNumServers": $numMockServers
+    },
+    "tags": {
+        "smartdc_role": "mockcloud"
     }
 }
 EOP
