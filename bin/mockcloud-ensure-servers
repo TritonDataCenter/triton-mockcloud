@@ -44,8 +44,14 @@ function deleteServer
 # ---- mainline
 
 # This should match SERVER_ROOT defined in cn-agent
-# (https://github.com/joyent/sdc-cn-agent/blob/f3798e88d93004ed89e6fd6a8572d733b75096c2/lib/backends/dummy/common.js#L24).
-SERVER_ROOT=/opt/custom/virtual/servers
+# https://github.com/joyent/sdc-cn-agent/blob/master/lib/backends/dummy/common.js#L24
+DEFAULT_MOCKCLOUD_ROOT=/data/mockcloud
+mockcloudRoot=$(mdata-get mockcloudRoot || true)
+if [[ -z "$mockcloudRoot" ]]; then
+    mockcloudRoot=$DEFAULT_MOCKCLOUD_ROOT
+    mdata-put mockcloudRoot "$mockcloudRoot"
+fi
+SERVER_ROOT=$mockcloudRoot/servers
 
 numServers=$(mdata-get mockcloudNumServers)
 numCurrServers=0
