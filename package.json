@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "cn-agent": "git+https://github.com/joyent/sdc-cn-agent.git#b160d04",
-    "net-agent": "git+https://github.com/joyent/sdc-net-agent.git#0b39094"
+    "net-agent": "git+https://github.com/joyent/sdc-net-agent.git#grr-TRITON-697"
   },
   "devDependencies": {
     "eslint": "4.13.1",

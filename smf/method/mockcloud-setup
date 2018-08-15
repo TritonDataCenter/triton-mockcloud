@@ -86,7 +86,7 @@ EMOTD
 
 # Setup mock servers, cn-agent, etc.
 /opt/triton/mockcloud/bin/mockcloud-ensure-servers
-svccfg import /opt/triton/mockcloud/smf/manifests/cn-agent.xml
+svccfg import /opt/triton/mockcloud/smf/manifests/*-agent.xml
 
 # Note completion
 touch $SETUP_COMPLETE_FILE
