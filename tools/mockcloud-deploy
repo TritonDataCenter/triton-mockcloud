@@ -44,7 +44,7 @@ function fatal
 [[ $(sysinfo | /usr/bin/json "Boot Parameters.headnode") == "true" ]] \
     || fatal "This script must run from a TritonDC headnode global zone: sysinfo says this is not a headnode"
 
-mockcloudImageChannel=experimental
+mockcloudImageChannel=dev
 packageName=sample-4G
 skipConfirmations=no
 mockcloudImage=
