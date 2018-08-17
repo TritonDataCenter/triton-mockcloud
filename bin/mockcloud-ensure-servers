@@ -91,5 +91,17 @@ else
     svcadm restart cn-agent
 fi
 
+# Also restart net-agent if it's there.
+netAgentState=$(svcs -Ho fmri net-agent 2>/dev/null || true)
+if [[ -z "$netAgentState" ]]; then
+    true # pass
+elif [[ "$netAgentState" == "maintenance" ]]; then
+    echo "Clearing net-agent service"
+    svcadm clear net-agent
+else
+    echo "Restarting net-agent service"
+    svcadm restart net-agent
+fi
+
 
 exit 0

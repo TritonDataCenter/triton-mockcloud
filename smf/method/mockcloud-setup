@@ -50,6 +50,12 @@ SVC_PREFIX=/opt/triton/mockcloud
 echo "" >>/root/.profile
 echo "export PATH=$SVC_PREFIX/bin:$SVC_PREFIX/build/node/bin:\$PATH" >>/root/.profile
 
+# Fix PS1 to include datacenter
+DCNAME=$(mdata-get sdc:datacenter_name)
+if [[ -n $DCNAME ]]; then
+    sed -i -e "s/PS1=\"\[\\\u\@\\\h \\\w\].*$/PS1='[\\\u@(us-east-stg-1b:\\\h) \\\w]\$ '/" ~/.bashrc
+fi
+
 # Mount our delegated dataset at /data if we have one.
 dataset=zones/$(zonename)/data
 if zfs list | grep $dataset; then
