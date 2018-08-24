@@ -37,7 +37,7 @@ else
 	NODE_EXEC := $(shell which node)
 	NODE = node
 	NPM_EXEC := $(shell which npm)
-	NPM = npm
+	NPM = npm --global-style
 endif
 include ./tools/mk/Makefile.smf.defs
 
