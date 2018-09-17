@@ -53,7 +53,7 @@ echo "export PATH=$SVC_PREFIX/bin:$SVC_PREFIX/build/node/bin:\$PATH" >>/root/.pr
 # Fix PS1 to include datacenter
 DCNAME=$(mdata-get sdc:datacenter_name)
 if [[ -z $DCNAME ]]; then
-    sed -i -e "s/PS1=\"\[\\\u\@\\\h \\\w\].*$/PS1='[\\\u@(us-east-stg-1b:\\\h) \\\w]\$ '/" ~/.bashrc
+    sed -i -e "s/PS1=\"\[\\\u\@\\\h \\\w\].*$/PS1='[\\\u@(unknown:\\\h) \\\w]\$ '/" ~/.bashrc
 fi
 
 # Mount our delegated dataset at /data if we have one.
