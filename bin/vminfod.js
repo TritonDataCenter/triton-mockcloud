@@ -436,7 +436,7 @@ DummyVminfod.prototype.start = function start(callback) {
             self.queueUpdate();
         });
 
-        self.restifyServer.listen(9090, function () {
+        self.restifyServer.listen(9090, '127.0.0.1', function () {
             callback();
         });
     });
