@@ -35,7 +35,9 @@ var util = require('util');
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var bunyanSerializers = require('sdc-bunyan-serializers');
+var restify = require('restify');
 var vasync = require('vasync');
+var Watershed = require('watershed').Watershed;
 
 var DummyVmadm = require('vmadm/lib/index.dummy');
 
@@ -69,9 +71,10 @@ function DummyVminfod(opts) {
     var self = this;
 
     self.log = opts.log;
-    self.running = false;
     self.serverRoot = opts.serverRoot;
     self.servers = {};
+    self.startTime =
+        Math.floor((new Date().getTime() / 1000) - process.uptime());
 }
 
 DummyVminfod.prototype._startServer =
@@ -80,6 +83,10 @@ function _startServer(serverUuid, callback) {
 
     if (!self.servers[serverUuid]) {
         self.servers[serverUuid] = {};
+    }
+
+    if (self.servers[serverUuid].id === undefined) {
+        self.servers[serverUuid].id = 0;
     }
 
     if (self.servers[serverUuid].vmadm !== undefined) {
@@ -108,8 +115,12 @@ function _startServer(serverUuid, callback) {
         self.log.info('loaded ' + Object.keys(vms).length + ' VMs for ' + serverUuid);
 
         self.servers[serverUuid].vmadm.events({}, function _handler(evt) {
+            var idx;
+            var msg;
+            var sheds;
+
             self.log.info({
-                evtType: evt.type
+                evtType: evt.type,
                 zonename: evt.zonename
             }, 'Got a vmadm.events evt');
 
@@ -128,7 +139,37 @@ function _startServer(serverUuid, callback) {
                     break;
             }
 
-            // TODO also pass the event on to vmadm.events watchers
+            // This gives us a unique id for the event so that we can know when
+            // reconnecting if we missed events. From the id we also know when
+            // vminfod last restarted, what the last event *type* was for this
+            // server and how many total events vminfod has seen for this
+            // server since starting.
+            evt.id =
+                self.startTime + '.' +
+                process.pid + '.' +
+                evt.type + '.' +
+                self.servers[serverUuid].id++;
+
+            self.servers[serverUuid].lastEvent = evt.id;
+
+            // Send the evt to any watershed clients that are connected.
+            if (self.servers[serverUuid].sheds) {
+                msg = JSON.stringify(evt);
+                sheds = Object.keys(self.servers[serverUuid].sheds);
+                for (idx = 0; idx < sheds.length; idx++) {
+                    // TODO: move to log.trace
+                    self.log.debug({
+                        evt: evt,
+                        socketId: sheds[idx]
+                    }, 'sending message to client');
+
+                    try {
+                        self.servers[serverUuid].sheds[sheds[idx]].send(msg);
+                    } catch (e) {
+                        self.log.error({err: e}, 'failed to send msg to client');
+                    }
+                }
+            }
         }, function _onReady(eventErr) {
             self.log.info('listening for events from ' + serverUuid);
             callback();
@@ -227,8 +268,159 @@ DummyVminfod.prototype.queueUpdate = function queueUpdate() {
     }
 };
 
+function listServers(req, res, next) {
+    var self = this;
+
+    res.send(200, Object.keys(self.servers));
+    next();
+}
+
+function getVms(req, res, next) {
+    var self = this;
+    var vms;
+
+    if (!req.params.serverUuid ||
+        !self.servers.hasOwnProperty(req.params.serverUuid)) {
+
+        next(new restify.ResourceNotFoundError('server ' +
+            req.params.serverUuid + ' not found'));
+        return;
+    }
+
+    vms = Object.keys(self.servers[req.params.serverUuid].vms)
+        .map(function _mapVm(vm) {
+            return self.servers[req.params.serverUuid].vms[vm];
+        });
+
+    res.send(200, vms);
+    next();
+}
+
+function getVm(req, res, next) {
+    var self = this;
+
+    if (!req.params.serverUuid ||
+        !self.servers.hasOwnProperty(req.params.serverUuid)) {
+
+        next(new restify.ResourceNotFoundError('server ' +
+            req.params.serverUuid + ' not found'));
+        return;
+    }
+
+    if (!self.servers[req.params.serverUuid].vms.hasOwnProperty(req.params.vmUuid)) {
+        next(new restify.ResourceNotFoundError('VM ' +
+            req.params.vmUuid + ' not found'));
+        return;
+    }
+
+    res.send(200, self.servers[req.params.serverUuid].vms[req.params.vmUuid]);
+    next();
+}
+
+DummyVminfod.prototype.setupRoutes = function setupRoutes() {
+    var self = this;
+    var idx = 0;
+    var ws = new Watershed();
+
+    self.restifyServer.get({
+        path: '/servers'
+    }, listServers.bind(self));
+
+    self.restifyServer.get({
+        path: '/servers/:serverUuid/vms'
+    }, getVms.bind(self));
+
+    self.restifyServer.get({
+        path: '/servers/:serverUuid/vms/:vmUuid'
+    }, getVm.bind(self));
+
+    self.restifyServer.on('upgrade', function(req, socket, head) {
+        var shed;
+        var serverUuid = req.header('Server');
+        var socketId = socket.remoteAddress + ':' + socket.remotePort;
+
+        self.log.debug({
+            socketId: socketId,
+            serverUuid: serverUuid
+        }, 'saw upgrade');
+
+        if (!serverUuid || !self.servers.hasOwnProperty(serverUuid)) {
+            self.log.error({serverUuid: serverUUid},
+                'Unknown or missing "Server:" header');
+            socket.write('HTTP/1.1 404 Server Not Found\r\n' +
+                'Connection: close\r\n' +
+                '\r\n');
+            socket.end();
+            return;
+        }
+
+        try {
+            shed = ws.accept(req, socket, head);
+        } catch (ex) {
+            self.log.error({err: ex}, 'failed to accept upgrade');
+            socket.end();
+            return;
+        }
+
+        if (!self.servers[serverUuid].hasOwnProperty('sheds')) {
+            self.servers[serverUuid].sheds = {};
+        }
+        self.servers[serverUuid].sheds[socketId] = shed;
+
+        // node-watershed doesn't allow us to add additional headers to the
+        // upgrade response, so we can't tell the client the last event that
+        // way. So instead we send an event of type 'info' once the connection
+        // is established.
+        shed.send(JSON.stringify({
+            id: self.servers[serverUuid].lastEvent,
+            type: 'info'
+        }));
+
+        socket.on('close', function () {
+            self.log.debug({
+                socketId: socketId
+            }, 'socket closed, destroying shed');
+            shed.destroy();
+        });
+
+        socket.on('error', function (e) {
+            self.log.debug({
+                err: e,
+                socketId: socketId
+            }, 'socket error');
+            shed.end();
+        });
+
+        shed.on('connectionReset', function() {
+            self.log.debug('connection reset');
+        });
+
+        shed.on('error', function(e) {
+            self.log.debug({err: e}, 'connection error');
+        });
+
+        shed.on('end', function() {
+            delete self.servers[serverUuid].sheds[socketId];
+            self.log.debug({socketId: socketId}, 'shed ended');
+        });
+    });
+};
+
 DummyVminfod.prototype.start = function start(callback) {
     var self = this;
+    var config = {};
+
+    config.log = self.log;
+    config.acceptable = ['application/json'];
+    config.handleUpgrades = false;
+
+    self.restifyServer = restify.createServer(config);
+
+    // Want to not timeout these connections every 2 minutes (the default) while
+    // someone's listening on them for events.
+    self.restifyServer.server.setTimeout(24 * 60 * 60 * 1000);
+
+    self.setupRoutes();
 
     self._updateServers(function _onUpdated(updateErr) {
         assert.ifError(updateErr, 'should be able perform initial update');
@@ -244,8 +436,9 @@ DummyVminfod.prototype.start = function start(callback) {
             self.queueUpdate();
         });
 
-        self.running = true;
-        callback();
+        self.restifyServer.listen(9090, function () {
+            callback();
+        });
     });
 };
 
