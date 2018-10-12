@@ -47,8 +47,14 @@ var MOCKCLOUD_ROOT = process.env.MOCKCLOUD_ROOT ||
     {encoding: 'utf8'}).trim();
 var SERVER_ROOT = MOCKCLOUD_ROOT + '/servers';
 
+// We keep a global cache which maps *all* VMs to their server uuid in case
+// someone wants to load a VM frome this mockcloud instance and knows the
+// vm_uuid but not the server_uuid. One example is our dummy CMON which serves
+// all mockcloud CNs with a single instance currently.
+var globalVmServerMap = {};
 
-function loadVmMap(vmadm, callback) {
+
+function loadVmMap(vmadm, serverUuid, callback) {
     vmadm._loadVms({}, function _onLoadVms(err, loadedVms) {
         var idx;
         var vms = {};
@@ -56,6 +62,7 @@ function loadVmMap(vmadm, callback) {
         if (!err) {
             for (idx = 0; idx < loadedVms.length; idx++) {
                 vms[loadedVms[idx].uuid] = loadedVms[idx];
+                globalVmServerMap[loadedVms[idx].uuid] = serverUuid;
             }
         }
 
@@ -105,7 +112,9 @@ function _startServer(serverUuid, callback) {
     });
 
     // load VMs
-    loadVmMap(self.servers[serverUuid].vmadm, function _onLoaded(err, vms) {
+    loadVmMap(self.servers[serverUuid].vmadm, serverUuid,
+        function _onLoaded(err, vms) {
+
         if (err) {
             callback(err);
             return;
@@ -130,9 +139,11 @@ function _startServer(serverUuid, callback) {
                     break;
                 case 'create':
                     self.servers[serverUuid].vms[evt.zonename] = evt.vm;
+                    globalVmServerMap[evt.zonename] = serverUuid;
                     break;
                 case 'delete':
                     delete self.servers[serverUuid].vms[evt.zonename];
+                    delete globalVmServerMap[evt.zonename];
                     break;
                 default:
                     assert.fail('unknown evt.type ' + evt.type);
@@ -298,22 +309,35 @@ function getVms(req, res, next) {
 
 function getVm(req, res, next) {
     var self = this;
+    var serverUuid = req.params.serverUuid;
+    var vmUuid = req.params.vmUuid;
 
-    if (!req.params.serverUuid ||
-        !self.servers.hasOwnProperty(req.params.serverUuid)) {
+    if (serverUuid === '*' && vmUuid) {
+        // Special case: GET /servers/*/vms/<uuid>
+        //
+        // In this case we'll use the globalVmServerMap to find the server if it
+        // exists.
+        if (globalVmServerMap.hasOwnProperty(vmUuid)) {
+            serverUuid = globalVmServerMap[vmUuid];
+        } else {
+            next(new restify.ResourceNotFoundError('VM ' + vmUuid +
+                ' not found'));
+            return;
+        }
+    }
 
-        next(new restify.ResourceNotFoundError('server ' +
-            req.params.serverUuid + ' not found'));
+    if (!serverUuid || !self.servers.hasOwnProperty(serverUuid)) {
+        next(new restify.ResourceNotFoundError('server ' + serverUuid +
+            ' not found'));
         return;
     }
 
-    if (!self.servers[req.params.serverUuid].vms.hasOwnProperty(req.params.vmUuid)) {
-        next(new restify.ResourceNotFoundError('VM ' +
-            req.params.vmUuid + ' not found'));
+    if (!self.servers[serverUuid].vms.hasOwnProperty(req.params.vmUuid)) {
+        next(new restify.ResourceNotFoundError('VM ' + vmUuid + ' not found'));
         return;
     }
 
-    res.send(200, self.servers[req.params.serverUuid].vms[req.params.vmUuid]);
+    res.send(200, self.servers[serverUuid].vms[vmUuid]);
     next();
 }
 

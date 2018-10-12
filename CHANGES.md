@@ -1,5 +1,36 @@
 # triton-mockcloud changelog
 
+## 2.2.0
+
+TRITON-863 Add support for dummy cmon-agent.
+Add support for `GET /servers/*/vms/<vm_uuid>` in dummy vminfod.
+Add simple script tools/add\_externals.sh for adding external interfaces to mock CNs.
+Now listens on 127.0.0.1 only.
+
+## 2.1.0
+
+Adds a dummy vminfod for more consistent view of the system for agents.
+
+## 2.0.6
+
+Add restify dependency.
+
+## 2.0.5
+
+Add vm-agent.
+
+## 2.0.4
+
+Update cn-agent to latest/master.
+
+## 2.0.3
+
+Add net-agent.
+
+## 2.0.2
+
+Update cn-agent to b160d04 for delegated dataset support.
+
 ## 2.0.1
 
 First instance should be `mockcloud0` not `mockcloud1`. Also ignore deleted
