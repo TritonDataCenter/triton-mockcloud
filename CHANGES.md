@@ -1,5 +1,13 @@
 # triton-mockcloud changelog
 
+# 2.2.1
+
+Update components:
+
+ - cn-agent@2.3.2
+ - net-agent@2.2.0
+ - vm-agent@1.8.0
+
 ## 2.2.0
 
 TRITON-863 Add support for dummy cmon-agent.
