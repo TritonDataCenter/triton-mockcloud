@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright (c) 2018, Joyent, Inc.
+#
+
+#
+# "Install" an agentsshar package for a mockcloud CN.
+#
+
+set -o errexit
+
+DEFAULT_MOCKCLOUD_ROOT=/data/mockcloud
+mockcloudRoot=$(mdata-get mockcloudRoot || true)
+if [[ -z "$mockcloudRoot" ]]; then
+    mockcloudRoot=$DEFAULT_MOCKCLOUD_ROOT
+    mdata-put mockcloudRoot "$mockcloudRoot"
+fi
+SERVER_ROOT=$mockcloudRoot/servers
+
+server_uuid=$1
+shar_file=$2
+
+if [[ ! -d ${SERVER_ROOT}/${server_uuid} || ! -f ${shar_file} || -n $3 ]]; then
+    echo "Usage: $0 <server_uuid> <shar file>" >&2
+    exit 1
+fi
+
+if ! head ${shar_file} | grep "UNPACK_SUBDIR" >/dev/null; then
+    echo "FATAL: invalid shar, missing UNPACK_SUBDIR feature" >&2
+    exit 2
+fi
+
+# NOTE: we expect cn-agent to be the caller and to do any necessary locking to
+# prevent multiple simultaneous runs.
+
+# Cleanup from any previous failed run
+rm -rf /var/tmp/${server_uuid}
+
+# This will unpack to /var/tmp/${server_uuid}
+UNPACK_ONLY=true UNPACK_SUBDIR=${server_uuid} \
+    bash ${shar_file}
+
+if [[ ! -d /var/tmp/${server_uuid}/agents ]]; then
+    echo "FATAL: failed to create /var/tmp/${server_uuid}/agents" >&2
+    exit 2
+fi
+
+mkdir -p ${SERVER_ROOT}/${server_uuid}/agents
+cd ${SERVER_ROOT}/${server_uuid}/agents
+
+for file in $(ls /var/tmp/${server_uuid}/agents/*.tgz); do
+    echo "Unpacking ${file}..."
+    gtar --wildcards \
+        --exclude "test" \
+        --exclude "node_modules" \
+        -zxf ${file} \
+        "*/package.json" "*/image_uuid"
+done
+
+# Thanks config-agent!
+for file in $(ls /var/tmp/${server_uuid}/agents/*.tar.bz2); do
+    echo "Unpacking ${file}..."
+    gtar --wildcards \
+        --exclude "node_modules" \
+        -jxf ${file} \
+        "*/package.json" "*/image_uuid"
+done
+
+# Cleanup temporary files.
+rm -rf /var/tmp/${server_uuid}
+
+exit 0
