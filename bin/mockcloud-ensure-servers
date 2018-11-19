@@ -19,6 +19,9 @@ fi
 set -o errexit
 set -o pipefail
 
+# How many times to retry downloading latest agents shar before giving up
+agentsshar_retries=5
+
 export PATH=/opt/triton/mockcloud/bin:/opt/triton/mockcloud/build/node/bin:$PATH
 
 
@@ -53,6 +56,13 @@ if [[ -z "$mockcloudRoot" ]]; then
 fi
 SERVER_ROOT=$mockcloudRoot/servers
 
+DCNAME=$(mdata-get sdc:datacenter_name)
+DNSDOMAIN=$(mdata-get dnsDomain)
+if [[ -z $DCNAME || -z $DNSDOMAIN ]]; then
+    echo "FATAL: must have both DC name and DNS domain" >&2
+    exit 2
+fi
+
 numServers=$(mdata-get mockcloudNumServers)
 numCurrServers=0
 if [[ -d $SERVER_ROOT ]]; then
@@ -63,6 +73,19 @@ if [[ $numServers -eq $numCurrServers ]]; then
     echo "Already have $numServers mock servers"
     exit 0
 elif [[ $numServers -gt $numCurrServers ]]; then
+    echo "Ensuring we have latest agentsshar"
+    while [[ ! -f /var/tmp/latest-agentsshar.sh && $agentsshar_retries -gt 0 ]]; do
+        curl -o /var/tmp/latest-agentsshar.sh \
+            http://assets.$DCNAME.$DNSDOMAIN/extra/agents/latest \
+            || rm -f /var/tmp/latest-agentsshar.sh
+        agentsshar_retries=$((agentsshar_retries - 1))
+    done
+
+    if [[ ! -f /var/tmp/latest-agentsshar.sh ]]; then
+        echo "FATAL: Unable to download latest agentshar" >&2
+        exit 2
+    fi
+
     echo "Ensuring $numServers mock servers (currently have $numCurrServers)"
     numToCreate=$(( $numServers - $numCurrServers ))
     while [[ $numToCreate -gt 0 ]]; do
