@@ -19,7 +19,7 @@ NPM_ENV = SDC_AGENT_SKIP_LIFECYCLE=yes MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFM
 ifeq ($(shell uname -s),SunOS)
 	# sdcnode: use a recent node version (v6 for now) and recent
 	# triton-origin image (multiarch@18.1.0 is being explored now).
-	NODE_PREBUILT_VERSION=v6.14.3
+	NODE_PREBUILT_VERSION=v6.15.0
 	NODE_PREBUILT_TAG=zone
 	# minimal-multiarch 18.1.0
 	NODE_PREBUILT_IMAGE = 1ad363ec-3b83-11e8-8521-2f68a4a34d5d
