@@ -76,6 +76,7 @@ release: all
 		$(TOP)/node_modules \
 		$(TOP)/package.json \
 		$(TOP)/smf \
+		$(TOP)/tools \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)
 	# sdcnode
 	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)/build
