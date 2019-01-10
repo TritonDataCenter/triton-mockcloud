@@ -1,5 +1,11 @@
 # triton-mockcloud changelog
 
+# 2.3.4
+
+Update component:
+
+ - cn-agent@2.7.0
+
 # 2.3.3
 
 Update component:
