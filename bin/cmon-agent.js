@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2018, Joyent, Inc.
+ * Copyright (c) 2019, Joyent, Inc.
  */
 
 /*
@@ -23,6 +23,7 @@ var path = require('path');
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
 var bunyanSerializers = require('sdc-bunyan-serializers');
+var netconfig = require('triton-netconfig');
 var restify = require('restify');
 
 var DummyVmadm = require('vmadm/lib/index.dummy');
@@ -154,30 +155,20 @@ function mdataGet(key, callback) {
     });
 }
 
-// TODO: Should use common method to get rackaware admin IP.
-//       For now, this was copied from cn-agent.
 function findZoneAdminIp(callback) {
     mdataGet('sdc:nics', function _onMdata(err, nicsData) {
         var adminIp;
-        var idx;
-        var nic;
         var nics;
 
         try {
             nics = JSON.parse(nicsData.toString());
         } catch (e) {
-            callbac(e);
+            callback(e);
             return;
         }
 
         if (!err) {
-            for (idx = 0; idx < nics.length; idx++) {
-                nic = nics[idx];
-                if (nic.nic_tag === 'admin') {
-                    adminIp = nic.ip;
-                    break;
-                }
-            }
+            adminIp = netconfig.adminIpFromNicsArray(nics);
 
             if (!adminIp) {
                 callback(new Error('admin IP not found'));
