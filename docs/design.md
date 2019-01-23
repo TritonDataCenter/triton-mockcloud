@@ -216,7 +216,7 @@ implementation.
 If the communication for your service is API -> agent, instead of agent -> API,
 you will also need to have your API know how to talk to the mock version of the
 agent. Since this could be running in a zone, on someone's laptop or on a
-raspberry pi in someone's closet, cn-agent exposes an additional field on
+Raspberry Pi in someone's closet, cn-agent exposes an additional field on
 mockcloud CNs that provides the IP your API should use to talk to agents on that
 CN. At the time of this writing the field to use is `CN Agent IP` but this seems
 like it might change soon (see "Outstanding Issues" below).
