@@ -8,12 +8,20 @@ load to load test TritonDC for many CNs.
 
 ## Overview
 
-A "mockcloud" image includes the latest cn-agent and uses cn-agent's "dummy"
-backend (added in TRITON-381) which supports running a single cn-agent
-process that acts as one or more CNs (using data in
-`/opt/custom/virtual/servers/$uuid`).
+A more thorough discussion of how mockcloud works can be found in
+[docs/design.md](docs/design.md).
 
-To plan is to add mock support for other GZ agents (config-agent, vm-agent,
+A "mockcloud" image includes:
+
+ * A dummy cmon-agent
+ * A dummy cn-agent
+ * A dummy net-agent
+ * A dummy vm-agent
+
+each of which create their own single node process and that acts as one or more
+CNs (using data in `/data/mockcloud/servers/$uuid`).
+
+To plan is to add mock support for other GZ agents (config-agent, firewaller,
 etc.) to load test other TritonDC headnode services.
 
 
