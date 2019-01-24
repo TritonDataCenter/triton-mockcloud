@@ -54,15 +54,18 @@ are concerned. This means that:
 
 ## How it works
 
-We have 4 types of communication between Triton's API layer and components
+We have 5 types of communication between Triton's API layer and components
 running on individual CNs:
 
  1. API -> agent connections
     * cmon -> cmon-agent
     * cnapi -> cn-agent
  2. agent -> API connections
+    * amon-agent -> amon-master
+    * amon-proxy -> amon-master
     * config-agent -> sapi
     * firewaller -> fwapi
+    * smartlogin -> capi
     * net-agent -> napi
     * vm-agent -> vmapi
  3. Ur agent
@@ -74,12 +77,30 @@ running on individual CNs:
     * The hermes-actor gets deployed via hermes (from the sdc0 zone) to all CNs
       via Ur.
     * hermes-actor then talks to Manta using the hermes-proxy (in the sdc0 zone)
+ 5. hagfish-watcher
+    * Drops files around the filesystem to be picked up. Sometimes by hermes.
 
 We're currently ignoring #3 for reasons discussed in the previous section (this
-is going away), and #4 because while hermes is a service running in Triton, it's
-very different from everything else and not directly used by any of the other
-APIs. This leaves us with 6 agents to support, and at this point we actually
-don't (yet) support firewaller or config-agent.
+is going away), and #4 + #5 because while hermes is a service running in Triton,
+it's very different from everything else and not directly used by any of the
+other APIs. This leaves us with 9 agents to support, and at this point we
+actually don't (yet) support:
+
+ * amon-agent (being deprecated for Triton usage)
+ * amon-relay (being deprecated for Triton usage)
+ * config-agent (not implemented yet)
+ * firewaller (not implemented yet)
+ * smartlogin (doesn't make much sense without logins)
+
+### amon-agent
+
+Not implemented, and deprecated for use in Triton so unlikely to be implemented
+any time soon.
+
+### amon-proxy
+
+Not implemented, and deprecated for use in Triton so unlikely to be implemented
+any time soon.
 
 ### cn-agent
 
@@ -172,6 +193,11 @@ a mock CN version of net-agent one uses
 This will start up a version of all net-agent's FSMs which use a dummy version
 of node-vmadm (just like cn-agent) and therefore all operations will be
 performed against the mock VM files.
+
+### smartlogin
+
+Not implemented and unlikely to be implemented any time soon. It's not clear
+what this would even look like since one can't login to mock CN VMs.
 
 ### vm-agent
 
@@ -322,7 +348,28 @@ they'd normally get an IP using DHCP (not yet implemented for mock CNs). Within
 the APIs and in things like AdminUI, `sdc-server list` and other tools, it's
 important that this NAPI-allocated NIC be shown for the CN. The only things that
 need to know differently are those few APIs that actually connect to an agent on
-a mock CN.
+a mock CN. The reasons we want to maintain this mapping of Admin IP on the CN
+records to the IP in NAPI include:
+
+ * Anything that looks up NICs in NAPI based on data from CNAPI will potentially
+   not find what it's looking for if Admin IP doesn't match the NAPI records.
+
+ * The IP we want to connect to currently from CNAPI/CMON (`CN Agent IP`) has
+   `belongs_to_type=zone` in NAPI if using a mockcloud0 zone. It's also possible
+   for test scenarios that the IP for `CN Agent IP` is not in NAPI at all.
+   `Admin IP` on the other hand is always in NAPI and has
+   `belongs_to_type=server`. It seems likely that some software will break if
+   the `Admin IP` returned does not belong to a valid NAPI server NIC.
+
+ * With existing mockcloud0 setup, if we used the same IP as Admin IP for every
+   mockcloud CN this seems likely to cause problems when doing lookups or other
+   operations. In "real" DCs, and mockcloud setups so far, there's always a
+   1:1:1 mapping between CN, Admin IP and NAPI NIC record.
+
+ * Discussed below, but eventually we'd like to be using a mock dhcp client to
+   DCHPDISCOVER to booter. This also necessitates the Admin IP and MAC address
+   mapping as they do for "real" CNs.
+
 
 Obviously if the mockcloud cn-agent instance is running in a remote location, or
 on someone's laptop, it's not always going to be possible to plumb all the
@@ -345,9 +392,10 @@ Another naming issue is with the port for cn-agent. Since we have multiple
 cn-agent instances on the same IP in some cases (e.g. with a mockcloud0 zone),
 we can have different ports for each instance. Currently we use `CN Agent Port`
 in sysinfo for each instance of cn-agent. And for CMON, we don't care about the
-port, so we've not needed to separate these. If we're going to have more APIs
-that need to talk to CNs in the future (none are currently foreseen, but it is
-possible) we might need a better mechanism here.
+port because the mock cmon-agent listens on a single port and differentiates requests
+by `Host:` header, so we've not needed to separate these. If we're going to have
+more APIs that need to talk to CNs in the future (none are currently foreseen,
+but it is possible someday) we might need a better mechanism here.
 
 Another option would be to drop both `CN Agent IP` and `CN Agent Port` and
 instead have something like:
