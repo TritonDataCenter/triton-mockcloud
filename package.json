@@ -1,7 +1,7 @@
 {
   "name": "mockcloud",
   "description": "an image to mock out N TritonDC compute nodes",
-  "version": "2.3.6",
+  "version": "2.3.7",
   "author": "Joyent (joyent.com)",
   "private": true,
   "repository": {
@@ -9,7 +9,7 @@
     "url": "git+https://github.com/joyent/triton-mockcloud.git"
   },
   "dependencies": {
-    "cn-agent": "git+https://github.com/joyent/sdc-cn-agent.git#v2.8.2",
+    "cn-agent": "git+https://github.com/joyent/sdc-cn-agent.git#v2.9.0",
     "net-agent": "git+https://github.com/joyent/sdc-net-agent.git#v2.2.2",
     "restify": "4.3.0",
     "vm-agent": "git+https://github.com/joyent/sdc-vm-agent.git#v1.8.2",
