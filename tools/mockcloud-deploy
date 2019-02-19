@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright (c) 2018, Joyent, Inc.
+# Copyright (c) 2019, Joyent, Inc.
 #
 
 #
@@ -159,7 +159,7 @@ sdc-vmadm create <<EOP
     "owner_uuid": "$(bash /lib/sdc/config.sh -json | json ufds_admin_uuid)",
     "billing_id": "$(sdc-papi /packages?name=$packageName | json -H 0.uuid)",
     "networks": [
-        {"uuid": "$(sdc-napi /networks?name=admin | json -H 0.uuid)"}
+        {"name": "admin"}
     ],
     "server_uuid": "$deployServerUuid",
     "image_uuid": "$mockcloudImage",
