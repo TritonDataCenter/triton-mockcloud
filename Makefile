@@ -53,11 +53,9 @@ include ./deps/eng/tools/mk/Makefile.smf.defs
 RELEASE_TARBALL = $(NAME)-pkg-$(STAMP).tar.gz
 RELSTAGEDIR := /tmp/$(NAME)-$(STAMP)
 
-BASE_IMAGE_UUID = 1ad363ec-3b83-11e8-8521-2f68a4a34d5d
+BASE_IMAGE_UUID = b6ea7cb4-6b90-48c0-99e7-1d34c2895248
 BUILDIMAGE_NAME = $(NAME)
-BUILDIMAGE_DESC	= SDC MOCK CLOUD
-BUILDIMAGE_PKGSRC = tftp-hpa-5.2
-AGENTS		= amon config registrar
+BUILDIMAGE_DESC	= Triton Mockcloud
 
 #
 # Repo-specific targets
