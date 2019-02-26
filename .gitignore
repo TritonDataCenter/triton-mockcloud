@@ -1,6 +1,8 @@
 /tmp
+/make_stamps
 /node_modules
 /make_stamps
 /npm-debug.log
-/mockcloud-pkg-*.tar.bz2
+/mockcloud-pkg-*.tar.gz
+/bits
 /build

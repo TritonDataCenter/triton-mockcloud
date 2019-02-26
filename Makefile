@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, Joyent, Inc.
+# Copyright (c) 2019, Joyent, Inc.
 #
 
 NAME=mockcloud
@@ -29,21 +29,33 @@ endif
 #
 # Included definitions
 #
-include ./tools/mk/Makefile.defs
-include ./tools/mk/Makefile.node_modules.defs
+
+# triton-mockcloud is not a public module, so override
+ENGBLD_DEST_OUT_PATH ?= /stor/builds
+
+ENGBLD_USE_BUILDIMAGE	= true
+ENGBLD_REQUIRE		:= $(shell git submodule update --init deps/eng)
+include ./deps/eng/tools/mk/Makefile.defs
+TOP ?= $(error Unable to access eng.git submodule Makefiles.)
+
+include ./deps/eng/tools/mk/Makefile.node_modules.defs
 ifeq ($(shell uname -s),SunOS)
-	include ./tools/mk/Makefile.node_prebuilt.defs
+	include ./deps/eng/tools/mk/Makefile.node_prebuilt.defs
+	include ./deps/eng/tools/mk/Makefile.agent_prebuilt.defs
 else
 	NODE_EXEC := $(shell which node)
 	NODE = node
 	NPM_EXEC := $(shell which npm)
 	NPM = npm
 endif
-include ./tools/mk/Makefile.smf.defs
+include ./deps/eng/tools/mk/Makefile.smf.defs
 
-RELEASE_TARBALL = $(NAME)-pkg-$(STAMP).tar.bz2
-RELSTAGEDIR := /tmp/$(STAMP)
+RELEASE_TARBALL = $(NAME)-pkg-$(STAMP).tar.gz
+RELSTAGEDIR := /tmp/$(NAME)-$(STAMP)
 
+BASE_IMAGE_UUID = b6ea7cb4-6b90-48c0-99e7-1d34c2895248
+BUILDIMAGE_NAME = $(NAME)
+BUILDIMAGE_DESC	= Triton Mockcloud
 
 #
 # Repo-specific targets
@@ -90,25 +102,22 @@ release: all
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/include \
 		$(RELSTAGEDIR)/root/opt/triton/$(NAME)/build/node/share
 	# Tar it up.
-	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(TOP)/$(RELEASE_TARBALL) root)
+	(cd $(RELSTAGEDIR) && $(TAR) -I pigz -cf $(TOP)/$(RELEASE_TARBALL) root)
 	@rm -rf $(RELSTAGEDIR)
 
-publish:
-	@if [[ -z "$(BITS_DIR)" ]]; then \
-		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
-		exit 1; \
-	fi
-	mkdir -p $(BITS_DIR)/$(NAME)
-	cp $(RELEASE_TARBALL) $(BITS_DIR)/$(NAME)/$(RELEASE_TARBALL)
+publish: release
+	mkdir -p $(ENGBLD_BITS_DIR)/$(NAME)
+	cp $(RELEASE_TARBALL) $(ENGBLD_BITS_DIR)/$(NAME)/$(RELEASE_TARBALL)
 
 
 #
 # Includes
 #
-include ./tools/mk/Makefile.deps
-include ./tools/mk/Makefile.node_modules.targ
+include ./deps/eng/tools/mk/Makefile.deps
+include ./deps/eng/tools/mk/Makefile.node_modules.targ
 ifeq ($(shell uname -s),SunOS)
-	include ./tools/mk/Makefile.node_prebuilt.targ
+	include ./deps/eng/tools/mk/Makefile.node_prebuilt.targ
+	include ./deps/eng/tools/mk/Makefile.agent_prebuilt.targ
 endif
-include ./tools/mk/Makefile.smf.targ
-include ./tools/mk/Makefile.targ
+include ./deps/eng/tools/mk/Makefile.smf.targ
+include ./deps/eng/tools/mk/Makefile.targ
