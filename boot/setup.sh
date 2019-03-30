@@ -14,6 +14,14 @@ set -o xtrace
 
 # Include common utility functions (then run the boilerplate)
 source /opt/smartdc/boot/lib/util.sh
+
+# Hack around the fact that download_metadata is not optional and mockcloud
+# doesn't need a SAPI service
+function download_metadata
+{
+    return 0
+}
+
 sdc_common_setup
 
 # Actual mockcloud zone setup is handled by the 'mockcloud-setup'
