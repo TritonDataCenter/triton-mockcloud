@@ -1,5 +1,40 @@
 # triton-mockcloud changelog
 
+# 2.4.0
+
+TRITON-1165 mockcloud should use sdc-scripts
+Update components:
+
+ - cn-agent@2.11.0
+ - deps/sdc-scripts (new dep)
+
+# 2.3.8
+
+TRITON-922 sdc-mockcloud admin IP functions need to be factored out (#4)
+Update component:
+
+ - triton-netconfig@1.1.0
+
+# 2.3.7
+
+Update component:
+
+ - cn-agent@2.9.0
+
+# 2.3.6
+
+TRITON-1224 add "agents_uninstall" task to cn-agents "dummy" backend for mockcloud
+Update component:
+
+ - cn-agent@2.8.2
+
+# 2.3.5
+
+Update components:
+ - cn-agent@2.8.0
+ - net-agent@2.2.2
+ - vm-agent@1.8.2
+
 # 2.3.4
 
 Update component:

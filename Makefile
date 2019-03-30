@@ -76,9 +76,11 @@ release: all
 	@echo "Building $(RELEASE_TARBALL)"
 	# Stubs for Triton core user-script boot.
 	mkdir -p $(RELSTAGEDIR)/root/opt/smartdc
-	cp -PR \
-		$(TOP)/boot \
-		$(RELSTAGEDIR)/root/opt/smartdc
+	mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/boot
+	cp -R $(TOP)/deps/sdc-scripts/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
+	cp -R \
+		$(TOP)/boot/* \
+		$(RELSTAGEDIR)/root/opt/smartdc/boot/
 	# Mockcloud code to /opt/triton/mockcloud.
 	mkdir -p $(RELSTAGEDIR)/root/opt/triton/$(NAME)
 	cp -PR \
