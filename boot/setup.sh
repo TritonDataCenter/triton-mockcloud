@@ -30,7 +30,4 @@ if ! svcs -Ho fmri mockcloud-setup >/dev/null 2>&1; then
     svccfg import /opt/triton/mockcloud/smf/manifests/mockcloud-setup.xml
 fi
 
-# All done, run boilerplate end-of-setup
-sdc_setup_complete
-
 exit 0
