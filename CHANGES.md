@@ -1,5 +1,11 @@
 # triton-mockcloud changelog
 
+# 2.4.1
+
+Update component:
+
+ - cn-agent@2.12.1
+
 # 2.4.0
 
 TRITON-1165 mockcloud should use sdc-scripts
