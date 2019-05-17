@@ -20,9 +20,9 @@ ifeq ($(shell uname -s),SunOS)
 	# sdcnode: use a recent node version (v6 for now) and recent
 	# triton-origin image (multiarch@18.1.0 is being explored now).
 	NODE_PREBUILT_VERSION=v6.17.0
-	NODE_PREBUILT_TAG=zone
-	# minimal-multiarch 18.1.0
-	NODE_PREBUILT_IMAGE = 1ad363ec-3b83-11e8-8521-2f68a4a34d5d
+	NODE_PREBUILT_TAG=zone64
+	# minimal-64-lts 18.4.0
+	NODE_PREBUILT_IMAGE = c2c31b00-1d60-11e9-9a77-ff9f06554b0f
 endif
 
 
@@ -53,7 +53,8 @@ include ./deps/eng/tools/mk/Makefile.smf.defs
 RELEASE_TARBALL = $(NAME)-pkg-$(STAMP).tar.gz
 RELSTAGEDIR := /tmp/$(NAME)-$(STAMP)
 
-BASE_IMAGE_UUID = b6ea7cb4-6b90-48c0-99e7-1d34c2895248
+# triton-origin-x86_64-18.4.0
+BASE_IMAGE_UUID =  a9368831-958e-432d-a031-f8ce6768d190
 BUILDIMAGE_NAME = $(NAME)
 BUILDIMAGE_DESC	= Triton Mockcloud
 
