@@ -112,11 +112,14 @@ if [[ "$mockcloudImage" == "current" ]]; then
     [[ -n "$mockcloudImage" ]] \
         || fatal "there is no 'current' mockcloud image installed in this " \
             "DC's IMGAPI, use 'latest' to import from updates.joyent.com"
+    mockcloudImageVersion=$(sdc-imgadm get $mockcloudImage | json version)
 fi
 if [[ "$mockcloudImage" == "latest" ]]; then
     mockcloudImage=$(updates-imgadm -C $mockcloudImageChannel list -H -o uuid --latest name=mockcloud)
 fi
-mockcloudImageVersion=$(updates-imgadm -C '*' get $mockcloudImage | json version)
+if [[ -z "$mockcloudImageVersion" ]]; then
+    mockcloudImageVersion=$(updates-imgadm -C '*' get $mockcloudImage | json version)
+fi
 
 ufdsAdminUuid=$(bash /lib/sdc/config.sh -json | json ufds_admin_uuid)
 latestAliasN=$(sdc-vmapi "/vms?state=active&owner_uuid=$ufdsAdminUuid&alias=mockcloud" | json -Ha alias | cut -c10- | sort -n | tail -1)
