@@ -30,9 +30,6 @@ endif
 # Included definitions
 #
 
-# triton-mockcloud is not a public module, so override
-ENGBLD_DEST_OUT_PATH ?= /stor/builds
-
 ENGBLD_USE_BUILDIMAGE	= true
 ENGBLD_REQUIRE		:= $(shell git submodule update --init deps/eng)
 include ./deps/eng/tools/mk/Makefile.defs
