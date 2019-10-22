@@ -17,7 +17,7 @@
     "watershed": "0.4.0"
   },
   "devDependencies": {
-    "eslint": "4.13.1",
+    "eslint": "6.5.1",
     "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-joyent": "~2.0.0",
     "eslint-plugin-prettier": "^2.6.0",
