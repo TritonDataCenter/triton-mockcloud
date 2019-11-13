@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2019, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -25,16 +25,6 @@ var bunyan = require('bunyan');
 var bunyanSerializers = require('sdc-bunyan-serializers');
 var netconfig = require('triton-netconfig');
 var restify = require('restify');
-
-var DummyVmadm = require('vmadm/lib/index.dummy');
-
-// This will blow up if something goes wrong. That's what we want.
-var MOCKCLOUD_ROOT =
-    process.env.MOCKCLOUD_ROOT ||
-    child_process
-        .execSync('/usr/sbin/mdata-get mockcloudRoot', {encoding: 'utf8'})
-        .trim();
-var SERVER_ROOT = MOCKCLOUD_ROOT + '/servers';
 
 var logLevel = process.env.LOG_LEVEL || 'debug';
 var logger = bunyan.createLogger({
@@ -87,7 +77,7 @@ function getVmMetrics(vmUuid, callback) {
     var now = Math.floor(new Date().getTime() / 1000);
     var startTime = process.hrtime();
 
-    getVm(vmUuid, function _gotVm(err, vmobj) {
+    getVm(vmUuid, function _gotVm(err, _vmobj) {
         if (err) {
             // This will have err.code === ENOTFOUND if the VM wasn't found
             callback(err);
@@ -123,7 +113,6 @@ function getVm(vmUuid, callback) {
 
     var getErr;
     var url = path.join('/servers/*/vms', vmUuid);
-    var vmobj;
 
     vminfodClient.get(
         {
@@ -151,7 +140,7 @@ function mdataGet(key, callback) {
     child_process.execFile('/usr/sbin/mdata-get', [key], function _onMdata(
         err,
         stdout,
-        stderr
+        _stderr
     ) {
         assert.ifError(err, 'mdata-get should always work');
 

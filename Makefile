@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, Joyent, Inc.
+# Copyright 2019 Joyent, Inc.
 #
 
 NAME=mockcloud

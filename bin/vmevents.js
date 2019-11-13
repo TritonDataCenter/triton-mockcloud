@@ -22,9 +22,9 @@ function getEvents() {
     console.error(
         '<Watching for events for server ' + opts.headers.Server + '>'
     );
-    client.get(opts, function _onGet(err, res, socket, head) {
+    client.get(opts, function _onGet(_err, res, _socket, _head) {
         res.once('upgradeResult', function _onUpgrade(
-            upErr,
+            _upErr,
             upRes,
             upSocket,
             upHead

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2018, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -27,10 +27,6 @@
 
 var child_process = require('child_process');
 var fs = require('fs');
-var net = require('net');
-var path = require('path');
-var stream = require('stream');
-var util = require('util');
 
 var assert = require('assert-plus');
 var bunyan = require('bunyan');
@@ -203,7 +199,7 @@ DummyVminfod.prototype._startServer = function _startServer(
                     }
                 }
             },
-            function _onReady(eventErr) {
+            function _onReady(_eventErr) {
                 self.log.info('listening for events from ' + serverUuid);
                 callback();
             }
@@ -238,9 +234,9 @@ DummyVminfod.prototype._updateServers = function _updateServers(callback) {
     function _addServers(dirs, cb) {
         vasync.forEachPipeline(
             {
-                func: function _runStartServer(serverUuid, cb) {
+                func: function _runStartServer(serverUuid, nextServer) {
                     assert.uuid(serverUuid, 'serverUuid');
-                    self._startServer(serverUuid, cb);
+                    self._startServer(serverUuid, nextServer);
                 },
                 inputs: dirs
             },
@@ -251,9 +247,9 @@ DummyVminfod.prototype._updateServers = function _updateServers(callback) {
     function _delServers(dirs, cb) {
         vasync.forEachPipeline(
             {
-                func: function _runRemoveServer(serverUuid, cb) {
+                func: function _runRemoveServer(serverUuid, nextServer) {
                     assert.uuid(serverUuid, 'serverUuid');
-                    self._removeServer(serverUuid, cb);
+                    self._removeServer(serverUuid, nextServer);
                 },
                 inputs: self.prevServers.filter(function _filterMissing(dir) {
                     // Include servers that used to be in the list, but are gone now
@@ -272,17 +268,17 @@ DummyVminfod.prototype._updateServers = function _updateServers(callback) {
         cb();
     }
 
-    fs.readdir(self.serverRoot, function _onReadDir(err, dirs) {
-        if (err) {
+    fs.readdir(self.serverRoot, function _onReadDir(readdirErr, dirs) {
+        if (readdirErr) {
             self.log.error(
                 {
-                    err: err,
+                    err: readdirErr,
                     serverRoot: self.serverRoot
                 },
                 'failed to load server root'
             );
             if (callback) {
-                callback(err);
+                callback(readdirErr);
             }
             return;
         }
@@ -388,7 +384,6 @@ function getVm(req, res, next) {
 
 DummyVminfod.prototype.setupRoutes = function setupRoutes() {
     var self = this;
-    var idx = 0;
     var ws = new Watershed();
 
     self.restifyServer.get(
@@ -427,7 +422,7 @@ DummyVminfod.prototype.setupRoutes = function setupRoutes() {
 
         if (!serverUuid || !self.servers.hasOwnProperty(serverUuid)) {
             self.log.error(
-                {serverUuid: serverUUid},
+                {serverUuid: serverUuid},
                 'Unknown or missing "Server:" header'
             );
             socket.write(
