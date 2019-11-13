@@ -4,7 +4,7 @@
 
 NAME=mockcloud
 
-JS_FILES := $(shell find lib -name '*.js')
+JS_FILES := $(shell find bin lib -name '*.js')
 ESLINT_FILES := $(JS_FILES)
 CLEAN_FILES += ./node_modules npm-debug.log
 
