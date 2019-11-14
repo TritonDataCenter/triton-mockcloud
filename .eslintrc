@@ -19,6 +19,7 @@
         "node": true
     },
     "rules": {
-        "curly": ["error", "all"]
+        "curly": ["error", "all"],
+        "prettier/prettier": ["error", { "singleQuote": true }]
     }
 }

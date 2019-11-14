@@ -10,7 +10,7 @@ var opts = {
         connection: 'upgrade',
         upgrade: 'websocket',
         'Sec-WebSocket-Key': wskey,
-        'Sec-WebSocket-Version': '13',
+        'Sec-WebSocket-Version': '13'
     }
 };
 
@@ -19,9 +19,16 @@ var client = restify.createClient({
 });
 
 function getEvents() {
-    console.error('<Watching for events for server ' + opts.headers.Server + '>');
-    client.get(opts, function _onGet(err, res, socket, head) {
-        res.once('upgradeResult', function _onUpgrade(upErr, upRes, upSocket, upHead) {
+    console.error(
+        '<Watching for events for server ' + opts.headers.Server + '>'
+    );
+    client.get(opts, function _onGet(_err, res, _socket, _head) {
+        res.once('upgradeResult', function _onUpgrade(
+            _upErr,
+            upRes,
+            upSocket,
+            upHead
+        ) {
             var shed = ws.connect(upRes, upSocket, upHead, wskey);
             shed.on('text', function _onText(msg) {
                 var obj = JSON.parse(msg);

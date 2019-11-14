@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2019, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
  */
 
 /*
@@ -26,15 +26,7 @@ var bunyanSerializers = require('sdc-bunyan-serializers');
 var netconfig = require('triton-netconfig');
 var restify = require('restify');
 
-var DummyVmadm = require('vmadm/lib/index.dummy');
-
-// This will blow up if something goes wrong. That's what we want.
-var MOCKCLOUD_ROOT = process.env.MOCKCLOUD_ROOT ||
-    child_process.execSync('/usr/sbin/mdata-get mockcloudRoot',
-    {encoding: 'utf8'}).trim();
-var SERVER_ROOT = MOCKCLOUD_ROOT + '/servers';
-
-var logLevel = (process.env.LOG_LEVEL || 'debug');
+var logLevel = process.env.LOG_LEVEL || 'debug';
 var logger = bunyan.createLogger({
     name: 'dummy-cmon-agent',
     level: logLevel,
@@ -43,7 +35,6 @@ var logger = bunyan.createLogger({
 
 // GLOBAL
 var vminfodClient;
-
 
 function refreshZoneCache(req, res, next) {
     /*
@@ -57,38 +48,36 @@ function refreshZoneCache(req, res, next) {
 
 function getMetrics(req, res, next) {
     res.header('content-type', 'text/plain');
-    getVmMetrics(req.params.container,
-        function _sendMetrics(err, strMetrics) {
-            var strNotFound = 'container not found';
+    getVmMetrics(req.params.container, function _sendMetrics(err, strMetrics) {
+        var strNotFound = 'container not found';
 
-            if (err) {
-                if (err.code === 'ENOTFOUND') {
-                    logger.warn({ container: req.params.container },
-                        strNotFound);
-                    next(new restify.NotFoundError(strNotFound));
-                } else {
-                    logger.error(err);
-                    next(new restify.InternalServerError());
-                }
-                return;
+        if (err) {
+            if (err.code === 'ENOTFOUND') {
+                logger.warn({container: req.params.container}, strNotFound);
+                next(new restify.NotFoundError(strNotFound));
+            } else {
+                logger.error(err);
+                next(new restify.InternalServerError());
             }
+            return;
+        }
 
-            // ensure we got a string if we didn't have an error
-            assert.string(strMetrics, 'strMetrics');
+        // ensure we got a string if we didn't have an error
+        assert.string(strMetrics, 'strMetrics');
 
-            res.send(strMetrics);
-            next();
-        });
+        res.send(strMetrics);
+        next();
+    });
 }
 
 function getVmMetrics(vmUuid, callback) {
     var delta;
     var elapsed;
     var metrics;
-    var now = Math.floor((new Date()).getTime() / 1000);
+    var now = Math.floor(new Date().getTime() / 1000);
     var startTime = process.hrtime();
 
-    getVm(vmUuid, function _gotVm(err, vmobj) {
+    getVm(vmUuid, function _gotVm(err, _vmobj) {
         if (err) {
             // This will have err.code === ENOTFOUND if the VM wasn't found
             callback(err);
@@ -97,7 +86,7 @@ function getVmMetrics(vmUuid, callback) {
 
         // If we didn't get an error, the VM exists.
         delta = process.hrtime(startTime);
-        elapsed = (delta[0] + (delta[1] / 1e9));
+        elapsed = delta[0] + delta[1] / 1e9;
 
         metrics = [
             '# HELP time_metrics_available_boolean Whether time metrics were available, 0 = false, 1 = true',
@@ -124,31 +113,35 @@ function getVm(vmUuid, callback) {
 
     var getErr;
     var url = path.join('/servers/*/vms', vmUuid);
-    var vmobj;
 
-    vminfodClient.get({
-        agent: false,
-        path: url
-    }, function _onGet(err, req, res, obj) {
-        if (!err) {
-            callback(null, obj);
-        } else if (err.restCode === 'ResourceNotFound') {
-            getErr = new Error('VM ' + vmUuid + ' not found in vminfod');
-            getErr.code = 'ENOTFOUND';
-            callback(getErr);
-        } else {
-            callback(err);
+    vminfodClient.get(
+        {
+            agent: false,
+            path: url
+        },
+        function _onGet(err, req, res, obj) {
+            if (!err) {
+                callback(null, obj);
+            } else if (err.restCode === 'ResourceNotFound') {
+                getErr = new Error('VM ' + vmUuid + ' not found in vminfod');
+                getErr.code = 'ENOTFOUND';
+                callback(getErr);
+            } else {
+                callback(err);
+            }
         }
-    });
+    );
 }
 
 function mdataGet(key, callback) {
     assert.string(key, 'key');
     assert.func(callback, 'callback');
 
-    child_process.execFile('/usr/sbin/mdata-get', [
-        key
-    ], function _onMdata(err, stdout, stderr) {
+    child_process.execFile('/usr/sbin/mdata-get', [key], function _onMdata(
+        err,
+        stdout,
+        _stderr
+    ) {
         assert.ifError(err, 'mdata-get should always work');
 
         callback(null, stdout.trim());
@@ -192,15 +185,21 @@ function main() {
 
     server = restify.createServer(config);
 
-    server.get({
-        name: 'GetMetrics',
-        path: '/v1/:container/metrics'
-    }, getMetrics);
+    server.get(
+        {
+            name: 'GetMetrics',
+            path: '/v1/:container/metrics'
+        },
+        getMetrics
+    );
 
-    server.post({
-        name: 'InvalidateZoneCache',
-        path: '/v1/refresh'
-    }, refreshZoneCache);
+    server.post(
+        {
+            name: 'InvalidateZoneCache',
+            path: '/v1/refresh'
+        },
+        refreshZoneCache
+    );
 
     findZoneAdminIp(function _gotAdminIp(adminIpErr, adminIp) {
         if (adminIpErr) {
@@ -208,7 +207,7 @@ function main() {
             return;
         }
 
-        server.listen(9163, adminIp, function (listenErr) {
+        server.listen(9163, adminIp, function(listenErr) {
             logger.info({err: listenErr}, 'Startup sequence complete');
         });
     });
