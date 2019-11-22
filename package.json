@@ -14,7 +14,8 @@
     "restify": "4.3.0",
     "vm-agent": "git+https://github.com/joyent/sdc-vm-agent.git#v1.8.2",
     "triton-netconfig": "1.1.0",
-    "watershed": "0.4.0"
+    "watershed": "0.4.0",
+    "json": "^9.0.6"
   },
   "devDependencies": {
     "eslint": "^4.13.1",
