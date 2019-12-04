@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright (c) 2018, Joyent, Inc.
+# Copyright 2019 Joyent, Inc.
 #
 
 #
@@ -48,7 +48,8 @@ NODENAME=$(mdata-get sdc:alias)
 # - set MANTA_ envvars, but only for login sessions
 SVC_PREFIX=/opt/triton/mockcloud
 echo "" >>/root/.profile
-echo "export PATH=$SVC_PREFIX/bin:$SVC_PREFIX/build/node/bin:\$PATH" >>/root/.profile
+echo "export PATH=$SVC_PREFIX/bin:$SVC_PREFIX/build/node/bin:$SVC_PREFIX/node_modules/.bin:\$PATH" >>/root/.profile
+echo "export MANPATH=$SVC_PREFIX/node_modules/json/man:\$MANPATH" >>/root/.profile
 
 # Fix PS1 to include datacenter
 DCNAME=$(mdata-get sdc:datacenter_name)
