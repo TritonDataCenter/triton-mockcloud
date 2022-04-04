@@ -1,5 +1,5 @@
 #
-# Copyright 2019 Joyent, Inc.
+# Copyright 2022 Joyent, Inc.
 #
 
 NAME=mockcloud
@@ -19,10 +19,10 @@ NPM_ENV = SDC_AGENT_SKIP_LIFECYCLE=yes MAKE_OVERRIDES='CTFCONVERT=/bin/true CTFM
 ifeq ($(shell uname -s),SunOS)
 	# sdcnode: use a recent node version (v6 for now) and recent
 	# triton-origin image (multiarch@18.1.0 is being explored now).
-	NODE_PREBUILT_VERSION=v6.17.0
+	NODE_PREBUILT_VERSION=v6.17.1
 	NODE_PREBUILT_TAG=zone64
-	# minimal-64-lts 18.4.0
-	NODE_PREBUILT_IMAGE = c2c31b00-1d60-11e9-9a77-ff9f06554b0f
+	# minimal-64-lts 21.4.0
+	NODE_PREBUILT_IMAGE=a7199134-7e94-11ec-be67-db6f482136c2
 endif
 
 
@@ -34,6 +34,8 @@ ENGBLD_USE_BUILDIMAGE	= true
 ENGBLD_REQUIRE		:= $(shell git submodule update --init deps/eng)
 include ./deps/eng/tools/mk/Makefile.defs
 TOP ?= $(error Unable to access eng.git submodule Makefiles.)
+
+BUILD_PLATFORM  = 20210826T002459Z
 
 include ./deps/eng/tools/mk/Makefile.node_modules.defs
 ifeq ($(shell uname -s),SunOS)
@@ -50,8 +52,8 @@ include ./deps/eng/tools/mk/Makefile.smf.defs
 RELEASE_TARBALL = $(NAME)-pkg-$(STAMP).tar.gz
 RELSTAGEDIR := /tmp/$(NAME)-$(STAMP)
 
-# triton-origin-x86_64-18.4.0
-BASE_IMAGE_UUID =  a9368831-958e-432d-a031-f8ce6768d190
+# triton-origin-x86_64-21.4.0
+BASE_IMAGE_UUID = 502eeef2-8267-489f-b19c-a206906f57ef
 BUILDIMAGE_NAME = $(NAME)
 BUILDIMAGE_DESC	= Triton Mockcloud
 
