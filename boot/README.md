@@ -4,8 +4,8 @@ code is run on initial boot other than using a user-script.
 
 Because we need *some* user-script to setup a mockcloud VM, we'll work with the
 standard Triton core user-script
-(https://github.com/joyent/sdcadm/blob/master/etc/setup/user-script) which does
-the following.
+<https://github.com/TritonDataCenter/sdcadm/blob/master/etc/setup/user-script>
+which does the following.
 
 - runs /opt/smartdc/boot/setup.sh on initial boot
 - runs /opt/smartdc/boot/configure.sh on every boot

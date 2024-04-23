@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 # Copyright 2019 Joyent, Inc.
+# Copyright 2024 MNX Cloud, Inc.
 #
 
 #
@@ -85,7 +86,7 @@ mkdir -p "$mockcloudRoot"
 
 # MOTD
 cat <<EMOTD >/etc/motd
-** This is a mockcloud instance (https://github.com/joyent/triton-mockcloud)
+** This is a mockcloud instance (https://github.com/TritonDataCenter/triton-mockcloud)
 **            uuid: $(zonename) ($(mdata-get sdc:alias))
 **           image: $(mdata-get sdc:image_uuid)
 **       mock data: $mockcloudRoot
