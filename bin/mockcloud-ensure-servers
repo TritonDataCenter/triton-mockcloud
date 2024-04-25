@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 # Copyright (c) 2018, Joyent, Inc.
+# Copyright 2024 MNX Cloud, Inc.
 #
 
 #
@@ -47,7 +48,7 @@ function deleteServer
 # ---- mainline
 
 # This should match SERVER_ROOT defined in cn-agent
-# https://github.com/joyent/sdc-cn-agent/blob/master/lib/backends/dummy/common.js#L24
+# https://github.com/TritonDataCenter/sdc-cn-agent/blob/master/lib/backends/dummy/common.js#L24
 DEFAULT_MOCKCLOUD_ROOT=/data/mockcloud
 mockcloudRoot=$(mdata-get mockcloudRoot || true)
 if [[ -z "$mockcloudRoot" ]]; then

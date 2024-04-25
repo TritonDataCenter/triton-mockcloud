@@ -1,18 +1,18 @@
 {
   "name": "mockcloud",
   "description": "an image to mock out N TritonDC compute nodes",
-  "version": "2.4.3",
-  "author": "Joyent (joyent.com)",
+  "version": "2.4.4",
+  "author": "MNX Cloud (mnx.io)",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joyent/triton-mockcloud.git"
+    "url": "git+https://github.com/TritonDataCenter/triton-mockcloud.git"
   },
   "dependencies": {
-    "cn-agent": "git+https://github.com/joyent/sdc-cn-agent.git#v2.14.7",
-    "net-agent": "git+https://github.com/joyent/sdc-net-agent.git#v2.3.4",
+    "cn-agent": "git+https://github.com/TritonDataCenter/sdc-cn-agent.git#v2.14.7",
+    "net-agent": "git+https://github.com/TritonDataCenter/sdc-net-agent.git#v2.3.4",
     "restify": "4.3.0",
-    "vm-agent": "git+https://github.com/joyent/sdc-vm-agent.git#v1.9.1",
+    "vm-agent": "git+https://github.com/TritonDataCenter/sdc-vm-agent.git#v1.9.1",
     "triton-netconfig": "1.1.0",
     "watershed": "0.4.0",
     "json": "^9.0.6"

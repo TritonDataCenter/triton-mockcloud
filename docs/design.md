@@ -115,7 +115,7 @@ all the pieces that talked to the system and hiding them behind an interface.
 The default backend for cn-agent is the "smartos" backend, this contains all the
 logic for interfacing with the SmartOS platform. It talks to imgadm, vmadm, zfs,
 zoneadm, etc. and exports functionality through CNAPI using tasks in the
-[lib/backends/smartos/tasks](https://github.com/joyent/sdc-cn-agent/tree/master/lib/backends/smartos/tasks)
+[lib/backends/smartos/tasks](https://github.com/TritonDataCenter/sdc-cn-agent/tree/master/lib/backends/smartos/tasks)
 directory.
 
 The dummy backend uses a set of files to manage all state. There is a tool
@@ -140,7 +140,7 @@ cn-agent is running you'll also see:
  * `SERVER_ROOT/servers/<server_uuid>/logs/cn-agent/`
  * `SERVER_ROOT/servers/<server_uuid>/logs/cn-agent/<timestamp>-<task>.log`
 
-with some servers created, the [tasks exposed for these CNs](https://github.com/joyent/sdc-cn-agent/tree/master/lib/backends/dummy/tasks)
+with some servers created, the [tasks exposed for these CNs](https://github.com/TritonDataCenter/sdc-cn-agent/tree/master/lib/backends/dummy/tasks)
 to implement various functions can be called by CNAPI. The backend handles
 loading sysinfo and other data from the server's directory. When VMs are
 created through VMAPI, these will be placed in:
@@ -150,27 +150,27 @@ created through VMAPI, these will be placed in:
 
 with the `<vm_uuid>.json` being a VM object representing each virtual VM.
 
-The cn-agent tasks use the dummy backends in [node-vmadm](https://github.com/joyent/node-vmadm/tree/master/lib).
+The cn-agent tasks use the dummy backends in [node-vmadm](https://github.com/TritonDataCenter/node-vmadm/tree/master/lib).
 The `index.dummy.js` and `index.dummy_vminfod.js` backends should work basically
 the same, with the `index.dummy_vminfod.js` backend using [a mock version of a
-vminfod-like thing](https://github.com/joyent/triton-mockcloud/blob/master/bin/vminfod.js).
+vminfod-like thing](https://github.com/TritonDataCenter/triton-mockcloud/blob/master/bin/vminfod.js).
 These backends both just convert the standard create/delete/etc commands for
 vmadm to modifications on the `<vm_uuid>.json` files.
 
 The sdc-cn-agent repo also contains the tools to:
 
  * [create mock
-   CNs](https://github.com/joyent/sdc-cn-agent/blob/master/lib/backends/dummy/tools/create-server.js)
+   CNs](https://github.com/TritonDataCenter/sdc-cn-agent/blob/master/lib/backends/dummy/tools/create-server.js)
  * [delete mock
-   CNs](https://github.com/joyent/sdc-cn-agent/blob/master/lib/backends/dummy/tools/delete-server.js)
+   CNs](https://github.com/TritonDataCenter/sdc-cn-agent/blob/master/lib/backends/dummy/tools/delete-server.js)
  * [run a mockcloud cn-agent instance for all
-   servers](https://github.com/joyent/sdc-cn-agent/blob/master/lib/backends/dummy/tools/run-servers.js)
+   servers](https://github.com/TritonDataCenter/sdc-cn-agent/blob/master/lib/backends/dummy/tools/run-servers.js)
 
 
 ### cmon-agent
 
 Right now the [mock version of
-cmon-agent](https://github.com/joyent/triton-mockcloud/blob/master/bin/cmon-agent.js)
+cmon-agent](https://github.com/TritonDataCenter/triton-mockcloud/blob/master/bin/cmon-agent.js)
 is in the triton-mockcloud repo. This just responds with some basic time metrics
 for each VM. This way when cmon tries to talk to this mock CN because it
 discovered that the VM exists, it will succeed. In the future we might want to
@@ -189,7 +189,7 @@ Unimplemented.
 Like cn-agent net-agent has a dummy implementation. Unlike cn-agent it doesn't
 do this via a "backend" but rather by an alternate top-level file. To start
 a mock CN version of net-agent one uses
-[dummy/net-agent.js](https://github.com/joyent/sdc-net-agent/blob/master/dummy/net-agent.js).
+[dummy/net-agent.js](https://github.com/TritonDataCenter/sdc-net-agent/blob/master/dummy/net-agent.js).
 This will start up a version of all net-agent's FSMs which use a dummy version
 of node-vmadm (just like cn-agent) and therefore all operations will be
 performed against the mock VM files.
@@ -202,7 +202,7 @@ what this would even look like since one can't login to mock CN VMs.
 ### vm-agent
 
 To run a dummy vm-agent one runs
-[bin/run-dummy-vm-agents.js](https://github.com/joyent/sdc-vm-agent/blob/master/bin/run-dummy-vm-agents.js)
+[bin/run-dummy-vm-agents.js](https://github.com/TritonDataCenter/sdc-vm-agent/blob/master/bin/run-dummy-vm-agents.js)
 which will create a `VmAgent` instance for each mock CN. It will then again use
 node-vmadm's dummy backends to watch for changes to the virtual VMs and send
 them to VMAPI.
@@ -383,7 +383,7 @@ There are a few problems with the current setup though. First, it's confusing.
 Especially on account of the naming. One option would be that instead of `CN
 Agent IP` we could rename this to `Agent IP` so it's clear that's the IP to use
 for all communication from APIs to agents. Then we could add a helper function
-to [triton-netconfig](https://github.com/joyent/node-triton-netconfig) like
+to [triton-netconfig](https://github.com/TritonDataCenter/node-triton-netconfig) like
 `netconfig.agentIpFromSysinfo` into which you would pass in the CN's sysinfo and
 out of which you'd get either `Agent IP` if that's set, or `Admin IP` if it is
 not.
